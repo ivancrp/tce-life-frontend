@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { API_URL } from '../config/api';
-import { setAuthData, logout, setupAuthToken } from '../utils/auth';
+import { setAuthData, logout, setupAuthToken, TOKEN_KEY } from '../utils/auth';
+import api from './api';
+import { RegisterUserData } from '../types';
 
 export interface LoginCredentials {
   email: string;
@@ -56,7 +58,7 @@ export class AuthService {
       }
       
       // Chamar a API de autenticação
-      const response = await axios.post(`${API_URL}/auth/login`, credentials);
+      const response = await api.post('/auth/login', credentials);
       const data = response.data;
       
       console.log('Login bem-sucedido para:', credentials.email);
@@ -123,8 +125,8 @@ export class AuthService {
       };
       
       // Chamar a API de autenticação com Google
-      const response = await axios.post(
-        `${API_URL}/auth/google`, 
+      const response = await api.post(
+        '/auth/google', 
         { token: googleToken },
         axiosConfig
       );
@@ -189,7 +191,7 @@ export class AuthService {
    * @returns Promise<boolean> indicando se o token é válido
    */
   static async verifyToken(): Promise<boolean> {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem(TOKEN_KEY);
     
     if (!token) {
       console.log('verifyToken: Nenhum token encontrado no localStorage');
@@ -242,7 +244,7 @@ export class AuthService {
         // Se o erro for 401 (Unauthorized) ou 403 (Forbidden), o token é inválido
         if (error.response.status === 401 || error.response.status === 403) {
           console.log('verifyToken: Token inválido, removendo dados de autenticação');
-          localStorage.removeItem('token');
+          localStorage.removeItem(TOKEN_KEY);
           localStorage.removeItem('user');
           delete axios.defaults.headers.common['Authorization'];
         }
@@ -254,5 +256,23 @@ export class AuthService {
       
       return false;
     }
+  }
+
+  static async register(userData: RegisterUserData) {
+    const response = await api.post('/auth/register', {
+      ...userData,
+      role: 'PACIENTE' // Define o papel como PACIENTE por padrão
+    });
+    return response.data;
+  }
+
+  static getCurrentUser() {
+    const userStr = localStorage.getItem('user');
+    if (userStr) return JSON.parse(userStr);
+    return null;
+  }
+
+  static isAuthenticated() {
+    return !!localStorage.getItem(TOKEN_KEY);
   }
 } 

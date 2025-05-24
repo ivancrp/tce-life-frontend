@@ -1,16 +1,21 @@
 import api from './api';
 import { setupAuthToken } from '../utils/auth';
+import { Specialty } from './specialty.service';
 
 export interface Doctor {
   id: string;
   name: string;
   email: string;
   profilePicture?: string;
-  role: string;
+  role: {
+    id: string;
+    name: string;
+  };
   isActive: boolean;
   dateOfBirth: string;
   gender: string;
   insurance: string;
+  specialties: Specialty[];
   createdAt: string;
   updatedAt: string;
 }
@@ -19,7 +24,7 @@ export const doctorService = {
   getAll: async () => {
     try {
       setupAuthToken();
-      const response = await api.get<Doctor[]>('/users/doctors');
+      const response = await api.get<Doctor[]>('/api/users/doctors');
       return response.data.filter(doctor => doctor.isActive);
     } catch (error: any) {
       console.error('Erro ao buscar médicos:', error);
@@ -44,7 +49,7 @@ export const doctorService = {
   getById: async (id: string) => {
     try {
       setupAuthToken();
-      const response = await api.get<Doctor>(`/users/${id}`);
+      const response = await api.get<Doctor>(`/api/users/${id}`);
       return response.data;
     } catch (error) {
       console.error('Erro ao buscar médico:', error);

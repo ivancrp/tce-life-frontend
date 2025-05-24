@@ -5,7 +5,6 @@ import { format, parseISO, isPast, isFuture, isToday, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Button from '../components/Button';
 import { scheduleService, Schedule } from '../services/schedule.service';
-import Modal from '../components/Modal';
 import { User as UserType } from '../types';
 import { getCurrentUser, UserData as AuthUserData } from '../utils/auth';
 import AppointmentForm from '../components/AppointmentForm';
@@ -16,6 +15,7 @@ const PatientPortal = () => {
   const [loading, setLoading] = useState(true);
   const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
   const [userData, setUserData] = useState<AuthUserData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Verificar autenticação e papel do usuário
@@ -41,26 +41,28 @@ const PatientPortal = () => {
   const loadSchedules = async (userId: string) => {
     try {
       setLoading(true);
+      setError(null);
       
       if (!userId) {
         console.error('ID do usuário não fornecido');
+        setError('Erro ao identificar usuário. Por favor, faça login novamente.');
         setSchedules([]);
         return;
       }
       
       console.log('Buscando agendamentos para o usuário:', userId);
-      try {
-        const data = await scheduleService.getByUserId(userId);
-        console.log('Agendamentos encontrados:', data);
-        setSchedules(data);
-      } catch (apiError) {
-        console.error('Erro na API ao buscar agendamentos:', apiError);
-        alert('Não foi possível carregar seus agendamentos. Tente novamente mais tarde.');
-        setSchedules([]);
-      }
-    } catch (error) {
+      const data = await scheduleService.getByUserId(userId);
+      console.log('Agendamentos encontrados:', data);
+      setSchedules(data);
+    } catch (error: any) {
       console.error('Erro ao carregar agendamentos:', error);
+      setError(error.message || 'Erro ao carregar agendamentos');
       setSchedules([]);
+      
+      // Se o erro for de autenticação, redirecionar para login
+      if (error.message.includes('Sessão expirada')) {
+        navigate('/login');
+      }
     } finally {
       setLoading(false);
     }
@@ -178,6 +180,21 @@ const PatientPortal = () => {
         <h1 className="text-2xl font-bold text-gray-900">Portal do Paciente</h1>
         <p className="text-gray-600">Bem-vindo(a) {userData?.name || 'ao portal do paciente'}</p>
       </div>
+
+      {error && (
+        <div className="mb-6">
+          <div className="bg-red-50 border-l-4 border-red-500 p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <AlertTriangle className="h-5 w-5 text-red-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cards resumo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -299,18 +316,26 @@ const PatientPortal = () => {
       </div>
 
       {/* Modal de agendamento */}
-      <Modal 
-        isOpen={showNewAppointmentModal} 
-        onClose={closeNewAppointmentModal}
-        title="Agendar Nova Consulta"
-      >
-        <div className="mt-4">
-          <AppointmentForm 
-            onSuccess={closeNewAppointmentModal} 
-            onCancel={closeNewAppointmentModal} 
-          />
-        </div>
-      </Modal>
+      {showNewAppointmentModal && (
+        <AppointmentForm 
+          onSubmit={async (data) => {
+            try {
+              await scheduleService.create({
+                doctorId: data.doctorId,
+                date: data.date,
+                time: data.time,
+                type: data.type,
+                userId: userData?.id || '',
+                notes: ''
+              });
+              closeNewAppointmentModal();
+            } catch (error) {
+              console.error('Erro ao criar agendamento:', error);
+            }
+          }}
+          onClose={closeNewAppointmentModal}
+        />
+      )}
     </div>
   );
 };

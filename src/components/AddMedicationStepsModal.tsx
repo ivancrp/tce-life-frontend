@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { Medicamento } from '../services/medicamento.service';
 
 interface AddMedicationStepsModalProps {
-  isOpen: boolean;
+  onSubmit: (medication: Omit<Medicamento, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onClose: () => void;
-  onSave: (medication: any) => void;
 }
 
-const AddMedicationStepsModal = ({ isOpen, onClose, onSave }: AddMedicationStepsModalProps) => {
+const AddMedicationStepsModal = ({ onSubmit, onClose }: AddMedicationStepsModalProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     // Informações Básicas
@@ -55,7 +55,7 @@ const AddMedicationStepsModal = ({ isOpen, onClose, onSave }: AddMedicationSteps
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (currentStep === 4) {
-      onSave(formData);
+      onSubmit(formData);
     }
   };
 
@@ -71,7 +71,7 @@ const AddMedicationStepsModal = ({ isOpen, onClose, onSave }: AddMedicationSteps
     }
   };
 
-  if (!isOpen) return null;
+  if (!onSubmit) return null;
 
   const renderStep = () => {
     switch (currentStep) {

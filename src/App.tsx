@@ -15,6 +15,12 @@ import UserSpecialty from './pages/Settings/UserSpecialty';
 import SpecialtySettings from './pages/Settings/Specialty';
 import LDAPSettings from './pages/Settings/LDAPConfig';
 import PatientRecord from './pages/PatientRecord';
+import { ThemeProvider } from '@mui/material/styles';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { ptBR } from 'date-fns/locale';
+import theme from './theme';
+import AppRoutes from './routes';
 
 const App = () => {
   const protectedRoutes = [
@@ -34,18 +40,22 @@ const App = () => {
 
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Rotas públicas */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/appointment" element={<Appointment />} />
-        
-        {/* Rotas protegidas */}
-        <Route element={<ProtectedRoute />}>
-          {protectedRoutes.map((route, index) => (
-            <Route key={index} path={route.path} element={route.element} />
-          ))}
-        </Route>
-      </Routes>
+      <ThemeProvider theme={theme}>
+        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
+          <Routes>
+            {/* Rotas públicas */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/appointment" element={<Appointment />} />
+            
+            {/* Rotas protegidas */}
+            <Route element={<ProtectedRoute />}>
+              {protectedRoutes.map((route, index) => (
+                <Route key={index} path={route.path} element={route.element} />
+              ))}
+            </Route>
+          </Routes>
+        </LocalizationProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 };

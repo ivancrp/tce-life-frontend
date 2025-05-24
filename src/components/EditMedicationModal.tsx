@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { Medicamento } from '../services/medicamento.service';
 
 interface EditMedicationModalProps {
-  isOpen: boolean;
+  onSubmit: (medication: Partial<Medicamento>) => void;
   onClose: () => void;
-  onSave: (medication: any) => void;
-  medication: any;
+  medication: Medicamento;
 }
 
-const EditMedicationModal = ({ isOpen, onClose, onSave, medication }: EditMedicationModalProps) => {
+const EditMedicationModal = ({ onSubmit, onClose, medication }: EditMedicationModalProps) => {
   const [formData, setFormData] = useState({
     nomeComercial: '',
     nomeGenerico: '',
@@ -57,10 +57,10 @@ const EditMedicationModal = ({ isOpen, onClose, onSave, medication }: EditMedica
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    onSubmit(formData);
   };
 
-  if (!isOpen) return null;
+  if (!medication) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

@@ -1,31 +1,101 @@
 export interface User {
   id: string;
   name: string;
+  nomeSocial?: string;
   email: string;
-  phone: string;
-  birth_date: string;
-  gender: 'male' | 'female';
-  cpf: string;
-  rg: string;
-  avatar_url?: string;
-  age?: number;
-  blood_type: string;
-  allergies: string[];
-  health_insurance: string;
-  address: {
-    street: string;
-    number: string;
-    neighborhood: string;
-    city: string;
-    state: string;
-    zip_code: string;
-  };
-  contact: {
-    phone: string;
-    email: string;
-    emergency_contact: string;
-  };
+  profilePicture?: string;
+  isActive: boolean;
+  role: Role;
+  dateOfBirth?: Date;
+  gender?: string;
+  naturalidade?: string;
+  nomeMae?: string;
+  nomePai?: string;
+  estadoCivil?: string;
+  escolaridade?: string;
+  telefone?: string;
+  celular?: string;
+  tipoSanguineo?: string;
+  raca?: string;
+  cpf?: string;
+  insurance?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
+
+export interface Role {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface RegisterUserData {
+  name: string;
+  nomeSocial?: string;
+  email: string;
+  password: string;
+  cpf: string;
+  dateOfBirth: Date;
+  gender: string;
+  naturalidade: string;
+  nomeMae: string;
+  nomePai?: string;
+  estadoCivil: string;
+  escolaridade: string;
+  telefone?: string;
+  celular: string;
+  tipoSanguineo: string;
+  raca: string;
+  insurance?: string;
+}
+
+export const ESTADO_CIVIL_OPTIONS = [
+  { value: 'SOLTEIRO', label: 'Solteiro(a)' },
+  { value: 'CASADO', label: 'Casado(a)' },
+  { value: 'DIVORCIADO', label: 'Divorciado(a)' },
+  { value: 'VIUVO', label: 'Viúvo(a)' },
+  { value: 'SEPARADO', label: 'Separado(a)' },
+  { value: 'UNIAO_ESTAVEL', label: 'União Estável' }
+];
+
+export const ESCOLARIDADE_OPTIONS = [
+  { value: 'FUNDAMENTAL_INCOMPLETO', label: 'Fundamental Incompleto' },
+  { value: 'FUNDAMENTAL_COMPLETO', label: 'Fundamental Completo' },
+  { value: 'MEDIO_INCOMPLETO', label: 'Médio Incompleto' },
+  { value: 'MEDIO_COMPLETO', label: 'Médio Completo' },
+  { value: 'SUPERIOR_INCOMPLETO', label: 'Superior Incompleto' },
+  { value: 'SUPERIOR_COMPLETO', label: 'Superior Completo' },
+  { value: 'POS_GRADUACAO', label: 'Pós-graduação' },
+  { value: 'MESTRADO', label: 'Mestrado' },
+  { value: 'DOUTORADO', label: 'Doutorado' }
+];
+
+export const TIPO_SANGUINEO_OPTIONS = [
+  { value: 'A+', label: 'A+' },
+  { value: 'A-', label: 'A-' },
+  { value: 'B+', label: 'B+' },
+  { value: 'B-', label: 'B-' },
+  { value: 'AB+', label: 'AB+' },
+  { value: 'AB-', label: 'AB-' },
+  { value: 'O+', label: 'O+' },
+  { value: 'O-', label: 'O-' }
+];
+
+export const RACA_OPTIONS = [
+  { value: 'BRANCO', label: 'Branco' },
+  { value: 'PARDO', label: 'Pardo' },
+  { value: 'NEGRO', label: 'Negro' },
+  { value: 'AMARELO', label: 'Amarelo' },
+  { value: 'INDIGENA', label: 'Indígena' },
+  { value: 'NAO_DECLARADO', label: 'Não Declarado' }
+];
+
+export const GENDER_OPTIONS = [
+  { value: 'M', label: 'Masculino' },
+  { value: 'F', label: 'Feminino' },
+  { value: 'OUTRO', label: 'Outro' },
+  { value: 'NAO_DECLARADO', label: 'Prefiro não declarar' }
+];
 
 export interface VitalSigns {
   blood_pressure: string;

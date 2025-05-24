@@ -1,6 +1,6 @@
 import api from './api';
 import { format } from 'date-fns';
-import { setupAuthToken } from '../utils/auth';
+import { setupAuthToken, TOKEN_KEY } from '../utils/auth';
 
 // Função para obter a data formatada para a API
 const getFormattedDate = (date: Date) => format(date, 'yyyy-MM-dd');
@@ -86,7 +86,7 @@ export const scheduleService = {
   getAll: async () => {
     try {
       setupAuthToken();
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem(TOKEN_KEY);
       console.log('Token atual:', token ? 'Presente' : 'Ausente');
       console.log('Headers da requisição:', api.defaults.headers);
       
@@ -117,9 +117,37 @@ export const scheduleService = {
       const response = await api.get<any[]>(`/schedules/user/${userId}`);
       console.log('Resposta da API (getByUserId):', response.data);
       return response.data.map(formatSchedule);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao buscar agendamentos do usuário:', error);
-      throw error;
+      
+      // Tratamento específico para erros conhecidos
+      if (error.response) {
+        const { status, data } = error.response;
+        
+        if (status === 401) {
+          // Limpar dados de autenticação e redirecionar para login
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+          throw new Error('Sessão expirada. Por favor, faça login novamente.');
+        }
+        
+        if (status === 404) {
+          throw new Error('Nenhum agendamento encontrado para este usuário.');
+        }
+        
+        if (status === 403) {
+          throw new Error('Você não tem permissão para visualizar estes agendamentos.');
+        }
+      }
+      
+      // Para erros de rede
+      if (error.message === 'Network Error') {
+        throw new Error('Erro de conexão. Verifique sua conexão com a internet.');
+      }
+      
+      // Para outros erros
+      throw new Error('Ocorreu um erro ao buscar os agendamentos. Por favor, tente novamente.');
     }
   },
 
@@ -139,7 +167,7 @@ export const scheduleService = {
 
         if (status === 404 && data.message?.includes('Usuário não encontrado')) {
           // Limpar dados de autenticação e redirecionar para login
-          localStorage.removeItem('token');
+          localStorage.removeItem(TOKEN_KEY);
           localStorage.removeItem('user');
           window.location.href = '/login';
           throw new Error('Sessão expirada. Por favor, faça login novamente.');
@@ -171,7 +199,7 @@ export const scheduleService = {
   update: async (id: string, data: Partial<Schedule>) => {
     try {
       setupAuthToken();
-      const response = await api.put<any>(`/schedules/${id}`, data);
+      const response = await api.put(`/schedules/${id}`, data);
       console.log('Resposta da API (update):', response.data);
       return formatSchedule(response.data);
     } catch (error) {
@@ -185,7 +213,7 @@ export const scheduleService = {
       setupAuthToken();
       await api.delete(`/schedules/${id}`);
     } catch (error) {
-      console.error('Erro ao deletar agendamento:', error);
+      console.error('Erro ao excluir agendamento:', error);
       throw error;
     }
   }

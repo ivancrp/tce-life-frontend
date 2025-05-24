@@ -1,45 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Search, PlusCircle, Edit, Trash2, AlertCircle } from 'lucide-react';
-import { API_URL } from '../config/api';
+import { medicamentoService, Medicamento } from '../services/medicamento.service';
 import AddMedicationStepsModal from '../components/AddMedicationStepsModal';
 import EditMedicationModal from '../components/EditMedicationModal';
-
-interface Medicamento {
-  id: string;
-  nomeComercial: string;
-  nomeGenerico: string;
-  codigoInterno: string;
-  apresentacao: string;
-  formaFarmaceutica: string;
-  dosagem: string;
-  unidadeMedida: string;
-  registroAnvisa: string;
-  lote: string;
-  dataFabricacao: string;
-  dataValidade: string;
-  quantidadeEstoque: number;
-  quantidadeMinima: number;
-  localArmazenamento: string;
-  condicoesArmazenamento: string;
-  tipoControle: string;
-  classificacaoTerapeutica: string;
-  necessitaPrescricao: boolean;
-  restricoesUso?: string;
-  indicacoes?: string;
-  contraIndicacoes?: string;
-  efeitosColaterais?: string;
-  posologiaPadrao?: string;
-  observacoes?: string;
-  fabricanteId: string;
-  fabricante: {
-    id: string;
-    nome: string;
-    registroAnvisa: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
 
 const Inventory = () => {
   const [medicamentos, setMedicamentos] = useState<Medicamento[]>([]);
@@ -57,8 +20,8 @@ const Inventory = () => {
   const fetchMedicamentos = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/medicamentos`);
-      setMedicamentos(response.data);
+      const data = await medicamentoService.getAll();
+      setMedicamentos(data);
       setError(null);
     } catch (err) {
       setError('Erro ao carregar medicamentos');
@@ -68,35 +31,9 @@ const Inventory = () => {
     }
   };
 
-  const handleAddMedication = async (medication: {
-    nomeComercial: string;
-    nomeGenerico: string;
-    codigoInterno: string;
-    apresentacao: string;
-    formaFarmaceutica: string;
-    dosagem: string;
-    unidadeMedida: string;
-    registroAnvisa: string;
-    lote: string;
-    dataFabricacao: string;
-    dataValidade: string;
-    quantidadeEstoque: number;
-    quantidadeMinima: number;
-    localArmazenamento: string;
-    condicoesArmazenamento: string;
-    tipoControle: string;
-    classificacaoTerapeutica: string;
-    necessitaPrescricao: boolean;
-    restricoesUso?: string;
-    indicacoes?: string;
-    contraIndicacoes?: string;
-    efeitosColaterais?: string;
-    posologiaPadrao?: string;
-    observacoes?: string;
-    fabricanteId: string;
-  }) => {
+  const handleAddMedication = async (medication: Omit<Medicamento, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      await axios.post(`${API_URL}/medicamentos`, medication);
+      await medicamentoService.create(medication);
       fetchMedicamentos();
       setIsModalOpen(false);
     } catch (err) {
@@ -105,12 +42,14 @@ const Inventory = () => {
     }
   };
 
-  const handleEditMedication = async (medication: any) => {
+  const handleEditMedication = async (medication: Partial<Medicamento>) => {
     try {
-      await axios.put(`${API_URL}/medicamentos/${selectedMedication?.id}`, medication);
-      fetchMedicamentos();
-      setIsEditModalOpen(false);
-      setSelectedMedication(null);
+      if (selectedMedication?.id) {
+        await medicamentoService.update(selectedMedication.id, medication);
+        fetchMedicamentos();
+        setIsEditModalOpen(false);
+        setSelectedMedication(null);
+      }
     } catch (err) {
       setError('Erro ao editar medicamento');
       console.error('Erro ao editar medicamento:', err);
@@ -120,7 +59,7 @@ const Inventory = () => {
   const handleDeleteMedication = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este medicamento?')) {
       try {
-        await axios.delete(`${API_URL}/medicamentos/${id}`);
+        await medicamentoService.delete(id);
         fetchMedicamentos();
       } catch (err) {
         setError('Erro ao excluir medicamento');
@@ -198,42 +137,35 @@ const Inventory = () => {
                     <h3 className="text-lg font-medium text-gray-900">{medicamento.nomeComercial}</h3>
                     <p className="text-sm text-gray-500">Nome Genérico: {medicamento.nomeGenerico}</p>
                     <p className="text-sm text-gray-500">Fabricante: {medicamento.fabricante?.nome || 'Não especificado'}</p>
-                    <p className="text-sm text-gray-500">Lote: {medicamento.lote}</p>
                     <p className="text-sm text-gray-500">
-                      Quantidade: {medicamento.quantidadeEstoque} {medicamento.unidadeMedida}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Validade: {formatDate(medicamento.dataValidade)}
-                    </p>
-                    <div className="mt-2">
-                      {isExpired(medicamento.dataValidade) ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          Vencido
-                        </span>
-                      ) : isAboutToExpire(medicamento.dataValidade) ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          Próximo ao vencimento
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Válido
-                        </span>
+                      Lote: {medicamento.lote} | Validade: {formatDate(medicamento.dataValidade)}
+                      {isExpired(medicamento.dataValidade) && (
+                        <span className="ml-2 text-red-600">Vencido</span>
                       )}
-                    </div>
+                      {isAboutToExpire(medicamento.dataValidade) && (
+                        <span className="ml-2 text-yellow-600">Próximo ao vencimento</span>
+                      )}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Estoque: {medicamento.quantidadeEstoque} {medicamento.unidadeMedida}
+                      {medicamento.quantidadeEstoque <= medicamento.quantidadeMinima && (
+                        <span className="ml-2 text-red-600">Estoque baixo</span>
+                      )}
+                    </p>
                   </div>
-                  <div className="flex space-x-2">
-                    <button 
+                  <div className="flex items-center space-x-4">
+                    <button
                       onClick={() => {
                         setSelectedMedication(medicamento);
                         setIsEditModalOpen(true);
                       }}
-                      className="p-2 text-blue-600 hover:text-blue-800"
+                      className="text-blue-600 hover:text-blue-800"
                     >
                       <Edit className="w-5 h-5" />
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleDeleteMedication(medicamento.id)}
-                      className="p-2 text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-800"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -245,21 +177,23 @@ const Inventory = () => {
         </div>
       )}
 
-      <AddMedicationStepsModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleAddMedication}
-      />
+      {isModalOpen && (
+        <AddMedicationStepsModal
+          onSubmit={handleAddMedication}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
 
-      <EditMedicationModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setSelectedMedication(null);
-        }}
-        onSave={handleEditMedication}
-        medication={selectedMedication}
-      />
+      {isEditModalOpen && selectedMedication && (
+        <EditMedicationModal
+          medication={selectedMedication}
+          onSubmit={handleEditMedication}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setSelectedMedication(null);
+          }}
+        />
+      )}
     </div>
   );
 };

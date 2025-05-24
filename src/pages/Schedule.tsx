@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { scheduleService, Schedule as ScheduleType } from '../services/schedule.service';
 import { attendanceService } from '../services/attendance.service';
 import Button from '../components/Button';
+import { TOKEN_KEY } from '../utils/auth';
 
 type ViewType = 'day' | 'week' | 'month';
 
@@ -91,7 +92,7 @@ export function SchedulePage() {
       setLoading(true);
       setError(null);
       
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem(TOKEN_KEY);
       if (!token) {
         setError('Sessão expirada. Por favor, faça login novamente.');
         return;
@@ -172,7 +173,7 @@ export function SchedulePage() {
       setLoading(true);
       
       // Verificar token
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem(TOKEN_KEY);
       console.log('Token presente:', !!token);
       
       try {
