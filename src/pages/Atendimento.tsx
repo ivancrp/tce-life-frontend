@@ -30,13 +30,17 @@ import {
   Ban
 } from 'lucide-react';
 import Button from '../components/Button';
-import { attendanceService, Attendance, VitalSigns, Medication } from '../services/attendance.service';
+import { attendanceService, Attendance, VitalSigns, Medication, MedicalExam } from '../services/attendance.service';
 import PrescriptionModal from '../components/PrescriptionModal';
 import CertificateModal from '../components/CertificateModal';
 import AddAllergyModal from '../components/AddAllergyModal';
 import AddMedicationInUseModal, { MedicationInUse } from '../components/AddMedicationInUseModal';
 import InputMask from 'react-input-mask';
 import { toast } from 'react-hot-toast';
+import RequestExamModal from '../components/RequestExamModal';
+import { ExamRequestModal } from '../components/ExamRequestModal';
+import ExamUploadModal from '../components/ExamUploadModal';
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
 
 interface VitalSignsInput {
   temperature: string;
@@ -126,6 +130,7 @@ export function AtendimentoPage() {
   const [isCancelling, setIsCancelling] = useState(false);
   const [isAddAllergyModalOpen, setIsAddAllergyModalOpen] = useState(false);
   const [isAddMedicationModalOpen, setIsAddMedicationModalOpen] = useState(false);
+  const [isExamRequestModalOpen, setIsExamRequestModalOpen] = useState(false);
 
   // Estados para todos os campos do atendimento
   const [symptoms, setSymptoms] = useState('');
@@ -373,6 +378,18 @@ export function AtendimentoPage() {
     }
   };
 
+  const handleExamRequested = () => {
+    if (scheduleId) {
+      loadAttendance(scheduleId);
+    }
+  };
+
+  const handleExamUploaded = () => {
+    if (scheduleId) {
+      loadAttendance(scheduleId);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -577,23 +594,78 @@ export function AtendimentoPage() {
             </div>
 
             {/* Card de Histórico Médico */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Histórico Médico</h3>
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <h2 className="text-xl font-semibold mb-4">Histórico Médico</h2>
               <div className="space-y-6">
                 {/* Seção de Alergias */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <p className="text-sm text-gray-500">Alergias</p>
+                    <p className="text-sm text-gray-500">Informações Clínicas</p>
                     <button
                       onClick={() => setIsAddAllergyModalOpen(true)}
                       className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                     >
-                      + Adicionar
+                      + Adicionar Alergia
                     </button>
                   </div>
-                  <div className="flex items-start">
-                    <AlertCircle className="h-5 w-5 text-gray-400 mt-1 mr-3" />
-                    <p className="font-medium">{attendance.patient?.allergies?.join(', ') || 'Nenhuma'}</p>
+                  <div className="bg-white rounded-lg">
+                    {/* Tipo Sanguíneo - só exibe se estiver definido */}
+                    {attendance.patient?.bloodType && (
+                      <div className="mb-2">
+                        <span className="font-medium">Tipo Sanguíneo: </span>
+                        <span>{attendance.patient.bloodType}</span>
+                      </div>
+                    )}
+                    
+                    {/* Alergias */}
+                    <div>
+                      <div className="flex items-center flex-wrap gap-2">
+                        <span className="flex items-center">
+                          <span className="w-2 h-2 rounded-full bg-red-500 mr-2"></span>
+                          Alergias:
+                        </span>
+                        {attendance.patient?.allergies && attendance.patient.allergies.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {attendance.patient.allergies.map((allergy, index) => (
+                              <div 
+                                key={index}
+                                className="flex items-center group"
+                              >
+                                <span className="px-2 py-0.5 bg-red-50 text-red-700 rounded text-sm">
+                                  {allergy}
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    if (attendance.patient?.id) {
+                                      attendanceService.removeAllergy(attendance.patient.id, allergy)
+                                        .then(updatedPatient => {
+                                          setAttendance({
+                                            ...attendance,
+                                            patient: {
+                                              ...attendance.patient,
+                                              allergies: updatedPatient.allergies || []
+                                            }
+                                          });
+                                          toast.success('Alergia removida com sucesso!');
+                                        })
+                                        .catch(error => {
+                                          console.error('Erro ao remover alergia:', error);
+                                          toast.error('Erro ao remover alergia. Por favor, tente novamente.');
+                                        });
+                                    }
+                                  }}
+                                  className="hidden group-hover:block ml-1 text-red-500 hover:text-red-700"
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">Nenhuma alergia registrada</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -659,6 +731,82 @@ export function AtendimentoPage() {
                 </div>
               </div>
             </div>
+
+            {/* Card de Exames Médicos */}
+            <Card className="mt-4">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Exames Médicos</CardTitle>
+                  <Button
+                    onClick={() => setIsExamRequestModalOpen(true)}
+                    variant="outline-primary"
+                    size="sm"
+                  >
+                    Solicitar Exame
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {attendance?.medicalExams && attendance.medicalExams.length > 0 ? (
+                  <div className="space-y-4">
+                    {attendance.medicalExams.map((exam) => (
+                      <div
+                        key={exam.id}
+                        className="border rounded-lg p-4 flex justify-between items-center"
+                      >
+                        <div>
+                          <h4 className="font-medium">{exam.examType}</h4>
+                          <p className="text-sm text-gray-500">
+                            Solicitado em: {new Date(exam.requestDate).toLocaleDateString()}
+                          </p>
+                          {exam.laboratory && (
+                            <p className="text-sm text-gray-500">
+                              Laboratório: {exam.laboratory}
+                            </p>
+                          )}
+                          <div className="mt-1">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                exam.status === 'completed'
+                                  ? 'bg-green-100 text-green-800'
+                                  : exam.status === 'pending'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}
+                            >
+                              {exam.status === 'completed'
+                                ? 'Concluído'
+                                : exam.status === 'pending'
+                                ? 'Pendente'
+                                : 'Cancelado'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          {exam.status === 'completed' && exam.result && (
+                            <Button
+                              onClick={() => {
+                                if (exam.result) {
+                                  window.open(exam.result, '_blank');
+                                }
+                              }}
+                              variant="outline-primary"
+                              size="sm"
+                            >
+                              Ver Resultado
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    Nenhum exame solicitado
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           {/* Coluna da Direita - Atendimento Atual */}
@@ -835,8 +983,18 @@ export function AtendimentoPage() {
             </div>
 
             {/* Card de Prescrição */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Prescrição</h3>
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Prescrição</h2>
+                <button
+                  type="button"
+                  onClick={() => setIsPrescriptionModalOpen(true)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 flex items-center"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Gerar Receita
+                </button>
+              </div>
               <textarea
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -914,16 +1072,22 @@ export function AtendimentoPage() {
       <PrescriptionModal
         isOpen={isPrescriptionModalOpen}
         onClose={() => setIsPrescriptionModalOpen(false)}
-        patientName={attendance.patient?.name || 'Paciente'}
+        patientName={attendance.patient?.name || ''}
+        doctorName={attendance.doctor?.name || ''}
+        doctorCrm={attendance.doctor?.crm || ''}
+        prescription={prescription}
+        attendanceDate={new Date(attendance.createdAt)}
       />
 
       <CertificateModal
         isOpen={isCertificateModalOpen}
         onClose={() => setIsCertificateModalOpen(false)}
-        patientName={attendance.patient?.name || 'Paciente'}
-        doctorName={attendance.doctor?.name || 'Médico'}
-        attendanceDate={new Date(attendance.createdAt)}
-        attendanceTime={format(new Date(attendance.createdAt), 'HH:mm')}
+        patientName={attendance?.patient?.name || 'Paciente'}
+        doctorName={attendance?.doctor?.name || 'Médico'}
+        attendanceDate={new Date(attendance?.createdAt)}
+        attendanceTime={format(new Date(attendance?.createdAt), 'HH:mm')}
+        attendanceId={attendance?.id}
+        userId={attendance?.patient?.id}
       />
 
       {/* Modal de Finalização */}
@@ -1043,6 +1207,13 @@ export function AtendimentoPage() {
         isOpen={isAddMedicationModalOpen}
         onClose={() => setIsAddMedicationModalOpen(false)}
         onSave={handleAddMedication}
+      />
+
+      <ExamRequestModal
+        isOpen={isExamRequestModalOpen}
+        onClose={() => setIsExamRequestModalOpen(false)}
+        attendanceId={attendance?.id ?? ''}
+        onExamRequested={handleExamRequested}
       />
     </div>
   );

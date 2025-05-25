@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Clipboard, AlertTriangle, CheckCircle, Calendar as CalendarIcon, Plus, ChevronRight, User, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, Clipboard, AlertTriangle, CheckCircle, Calendar as CalendarIcon, Plus, ChevronRight, User, ArrowRight, FileText, Upload } from 'lucide-react';
 import { format, parseISO, isPast, isFuture, isToday, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Button from '../components/Button';
@@ -8,6 +8,7 @@ import { scheduleService, Schedule } from '../services/schedule.service';
 import { User as UserType } from '../types';
 import { getCurrentUser, UserData as AuthUserData } from '../utils/auth';
 import AppointmentForm from '../components/AppointmentForm';
+import { attendanceService } from '../services/attendance.service';
 
 const PatientPortal = () => {
   const navigate = useNavigate();
@@ -16,6 +17,8 @@ const PatientPortal = () => {
   const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
   const [userData, setUserData] = useState<AuthUserData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [medicalExams, setMedicalExams] = useState<any[]>([]);
+  const [loadingExams, setLoadingExams] = useState(true);
 
   useEffect(() => {
     // Verificar autenticação e papel do usuário
@@ -36,6 +39,7 @@ const PatientPortal = () => {
 
     setUserData(user);
     loadSchedules(user.id);
+    loadMedicalExams(user.id);
   }, [navigate]);
 
   const loadSchedules = async (userId: string) => {
@@ -65,6 +69,32 @@ const PatientPortal = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMedicalExams = async (userId: string) => {
+    try {
+      setLoadingExams(true);
+      const exams = await attendanceService.getMedicalExamsByUserId(userId);
+      setMedicalExams(exams);
+    } catch (error) {
+      console.error('Erro ao carregar exames:', error);
+    } finally {
+      setLoadingExams(false);
+    }
+  };
+
+  const handleFileUpload = async (examId: string, files: FileList) => {
+    try {
+      const formData = new FormData();
+      Array.from(files).forEach(file => {
+        formData.append('files', file);
+      });
+      
+      await attendanceService.uploadExamFiles(examId, formData);
+      await loadMedicalExams(userData?.id || '');
+    } catch (error) {
+      console.error('Erro ao fazer upload dos arquivos:', error);
     }
   };
 
@@ -311,6 +341,83 @@ const PatientPortal = () => {
                 <ChevronRight className="ml-1 h-4 w-4" />
               </button>
             )}
+          </div>
+        )}
+      </div>
+
+      {/* Exames Médicos */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold mb-4 flex items-center">
+          <FileText className="mr-2 h-5 w-5 text-blue-600" />
+          Exames Médicos
+        </h2>
+        
+        {loadingExams ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : medicalExams.length === 0 ? (
+          <div className="bg-gray-50 rounded-lg p-6 text-center">
+            <p className="text-gray-500">Você não possui exames solicitados.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {medicalExams.map((exam) => (
+              <div key={exam.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h3 className="font-medium text-gray-900">{exam.examType}</h3>
+                    <p className="text-sm text-gray-500">
+                      Solicitado em: {new Date(exam.requestDate).toLocaleDateString()}
+                    </p>
+                    {exam.laboratory && (
+                      <p className="text-sm text-gray-500">
+                        Laboratório: {exam.laboratory}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {exam.status === 'pending' ? (
+                      <label className="cursor-pointer py-1.5 px-3 text-xs rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors flex items-center gap-1">
+                        <Upload className="w-4 h-4" />
+                        <span>Anexar Resultado</span>
+                        <input
+                          type="file"
+                          className="hidden"
+                          multiple
+                          accept=".pdf,image/*"
+                          onChange={(e) => e.target.files && handleFileUpload(exam.id, e.target.files)}
+                        />
+                      </label>
+                    ) : exam.status === 'completed' && exam.result ? (
+                      <button
+                        onClick={() => window.open(exam.result, '_blank')}
+                        className="py-1.5 px-3 text-xs rounded-md text-green-700 bg-green-50 hover:bg-green-100 transition-colors"
+                      >
+                        Ver Resultado
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      exam.status === 'completed'
+                        ? 'bg-green-100 text-green-800'
+                        : exam.status === 'pending'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}
+                  >
+                    {exam.status === 'completed'
+                      ? 'Concluído'
+                      : exam.status === 'pending'
+                      ? 'Pendente'
+                      : 'Cancelado'}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

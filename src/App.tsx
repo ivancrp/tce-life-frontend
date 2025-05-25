@@ -5,7 +5,6 @@ import Dashboard from './pages/Dashboard';
 import SchedulePage from './pages/Schedule';
 import { AtendimentoPage } from './pages/Atendimento';
 import Settings from './pages/Settings';
-import Appointment from './pages/Appointment';
 import ProtectedRoute from './components/ProtectedRoute';
 import Records from './pages/Records';
 import Reports from './pages/Reports';
@@ -21,6 +20,11 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { ptBR } from 'date-fns/locale';
 import theme from './theme';
 import AppRoutes from './routes';
+import SimpleLogin from './pages/SimpleLogin';
+import NewConsultation from './pages/NewConsultation';
+import EstoqueMedicamentos from './pages/EstoqueMedicamentos';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const App = () => {
   const protectedRoutes = [
@@ -45,7 +49,8 @@ const App = () => {
           <Routes>
             {/* Rotas públicas */}
             <Route path="/login" element={<Login />} />
-            <Route path="/appointment" element={<Appointment />} />
+            <Route path="/simple-login" element={<SimpleLogin />} />
+            <Route path="/new-consultation" element={<NewConsultation />} />
             
             {/* Rotas protegidas */}
             <Route element={<ProtectedRoute />}>
@@ -54,6 +59,11 @@ const App = () => {
               ))}
             </Route>
           </Routes>
+          <ToastContainer 
+            position="top-right" 
+            autoClose={3000} 
+            aria-label="Notificações do sistema"
+          />
         </LocalizationProvider>
       </ThemeProvider>
     </BrowserRouter>

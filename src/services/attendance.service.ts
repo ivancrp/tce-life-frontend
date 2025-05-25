@@ -37,15 +37,34 @@ export interface Patient {
   celular: string;
   workPhone?: string;
   profilePicture?: string;
-  allergies?: string[];
-  medications?: Medication[];
-  chronicDiseases?: string[];
-  gender?: string;
-  raca?: string;
+  allergies: string[];
+  medications: Medication[];
+  chronicDiseases: string[];
+  gender: string;
+  raca: string;
+  bloodType?: string;
+}
+
+export interface MedicalExam {
+  id: string;
+  userId: string;
+  attendanceId: string;
+  examType: string;
+  requestDate: string | Date;
+  resultDate?: string | Date;
+  status: 'pending' | 'completed' | 'canceled';
+  result?: string;
+  laboratory?: string;
+  observations?: string;
+  attachments?: Array<{
+    name?: string;
+    url: string;
+  }>;
 }
 
 export interface Attendance {
   id: string;
+  userId: string;
   scheduleId: string;
   doctorId: string;
   doctor: {
@@ -65,6 +84,7 @@ export interface Attendance {
     medications: Medication[];
     chronicDiseases: string[];
     profilePicture?: string;
+    bloodType?: string;
   };
   status: 'in_progress' | 'completed' | 'cancelled';
   symptoms: string;
@@ -72,8 +92,21 @@ export interface Attendance {
   prescription: string;
   observations: string;
   vitalSigns?: VitalSigns;
+  medicalExams?: MedicalExam[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface MedicalCertificate {
+  id?: string;
+  userId: string;
+  attendanceId: string;
+  type: string;
+  startDate: Date;
+  endDate?: Date;
+  cid?: string;
+  description: string;
+  daysOff: number;
 }
 
 class AttendanceService {
@@ -182,6 +215,69 @@ class AttendanceService {
       return response.data;
     } catch (error) {
       console.error('Erro ao remover medicamento:', error);
+      throw error;
+    }
+  }
+
+  async saveMedicalCertificate(data: Omit<MedicalCertificate, 'id'>): Promise<MedicalCertificate> {
+    setupAuthToken();
+    const response = await api.post('/medical-certificates', data);
+    return response.data;
+  }
+
+  async getMedicalCertificatesByAttendanceId(attendanceId: string): Promise<MedicalCertificate[]> {
+    setupAuthToken();
+    const response = await api.get(`/medical-certificates/attendance/${attendanceId}`);
+    return response.data;
+  }
+
+  async requestMedicalExam(data: {
+    userId: string;
+    attendanceId: string;
+    examType: string;
+    laboratory?: string;
+    observations?: string;
+    requestDate: Date;
+  }): Promise<MedicalExam> {
+    setupAuthToken();
+    // Garantindo que a data seja enviada no formato ISO
+    const formattedData = {
+      ...data,
+      requestDate: data.requestDate.toISOString(),
+      status: 'pending' as const
+    };
+    
+    const response = await api.post('/medical-exams', formattedData);
+    return response.data;
+  }
+
+  async getMedicalExamsByAttendanceId(attendanceId: string): Promise<MedicalExam[]> {
+    setupAuthToken();
+    const response = await api.get(`/medical-exams/attendance/${attendanceId}`);
+    return response.data;
+  }
+
+  async getAttendanceById(id: string): Promise<Attendance> {
+    const response = await api.get(`/attendances/${id}`);
+    return response.data;
+  }
+
+  async uploadExamFiles(examId: string, formData: FormData): Promise<MedicalExam> {
+    setupAuthToken();
+    const response = await api.post(`/medical-exams/${examId}/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  }
+
+  async getMedicalExamsByUserId(userId: string): Promise<MedicalExam[]> {
+    try {
+      const response = await api.get(`/medical-exams/user/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar exames do paciente:', error);
       throw error;
     }
   }
