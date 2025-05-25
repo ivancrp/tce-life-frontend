@@ -59,13 +59,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-[#F2F6F8] font-roboto">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 h-[85px] bg-[#2C417A] z-50">
+      <header className="fixed top-0 left-0 right-0 h-[85px] bg-[#2C417A] z-40 pl-64">
         <div className="h-full flex items-center max-w-[1440px] mx-auto">
-          <div className="w-64 px-4 flex items-center border-r border-[#3D529B] h-full">
-            <img src="/logo-branca.svg" alt="TCE-Life Logo" className="h-12 w-auto" />
-            <span className="text-white text-xl font-semibold ml-3">TCE-health</span>
-          </div>
-          
           <div className="flex-1 flex items-center justify-end px-4">
             {/* Mobile menu button */}
             <button
@@ -81,11 +76,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Sidebar */}
       <div 
-        className={`fixed top-[85px] left-0 z-40 w-64 bg-white transform ${
+        className={`fixed top-0 left-0 z-50 w-64 transform ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } transition-transform duration-200 ease-in-out h-[calc(100vh-85px)] shadow-md border-r border-gray-300 lg:translate-x-0`}
+        } transition-transform duration-200 ease-in-out h-screen lg:translate-x-0 flex flex-col`}
       >
-        <div className="flex flex-col h-full">
+        {/* Logo Section */}
+        <div className="h-[85px] bg-[#2C417A] flex items-center px-4">
+          <div className="flex items-center gap-2">
+            <img src="/logo-branca.svg" alt="TCE-Life Logo" className="h-14 w-auto" />
+            <div className="flex flex-col">
+              <span className="text-white text-xl font-semibold">TCE</span>
+              <span className="text-white text-lg">health</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Menu Section */}
+        <div className="flex-1 bg-white shadow-md border-r border-gray-300">
           <nav className="flex-1 px-2 py-2">
             {filteredNavigation.map((item) => {
               const Icon = item.icon;
@@ -110,16 +117,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Main content */}
       <div className={`pt-[85px] transition-all duration-200 ${isSidebarOpen ? 'lg:pl-64' : ''}`}>
-        <div className="max-w-[1440px] mx-auto">
-          {/* Breadcrumbs */}
-          <div className="px-4 py-2">
-            <Breadcrumbs />
-          </div>
-          
-          {/* Page content */}
-          <div className="px-4">
-            {children ? children : <Outlet />}
-          </div>
+        <div className="px-4">
+          {children ? children : <Outlet />}
         </div>
       </div>
     </div>

@@ -25,7 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         const token = localStorage.getItem('@TCE:token');
         if (token) {
-            api.defaults.headers.authorization = `Bearer ${token}`;
+            api.defaults.headers.Authorization = `Bearer ${token}`;
             // Aqui você pode fazer uma chamada para a API para obter os dados do usuário
             // Por enquanto, vamos apenas decodificar o token
             try {
@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const signIn = (token: string) => {
         localStorage.setItem('@TCE:token', token);
-        api.defaults.headers.authorization = `Bearer ${token}`;
+        api.defaults.headers.Authorization = `Bearer ${token}`;
         
         try {
             const payload = JSON.parse(atob(token.split('.')[1]));
@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const signOut = () => {
         localStorage.removeItem('@TCE:token');
-        api.defaults.headers.authorization = '';
+        api.defaults.headers.Authorization = '';
         setUser(null);
     };
 

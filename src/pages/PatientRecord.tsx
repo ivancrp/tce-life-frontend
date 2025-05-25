@@ -69,7 +69,7 @@ const PatientRecord = () => {
       return;
     }
     
-    api.defaults.headers.authorization = `Bearer ${token}`;
+    api.defaults.headers.Authorization = `Bearer ${token}`;
     loadAllData();
   }, [id, navigate]);
 

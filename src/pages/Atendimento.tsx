@@ -1017,53 +1017,51 @@ export function AtendimentoPage() {
             </div>
 
             {/* Botões de Ação */}
-            <div className="flex justify-between items-center bg-white rounded-lg shadow-sm p-4">
-              <div className="flex items-center space-x-3">
-                <button
-                  type="button"
-                  className="inline-flex items-center px-4 py-2.5 text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                  onClick={() => setIsCertificateModalOpen(true)}
-                >
-                  <FileCheck className="h-5 w-5 mr-2" />
-                  Gerar Atestado
-                </button>
-              </div>
+            <div className="flex justify-end items-center bg-white rounded-lg shadow-sm p-4 space-x-4">
+              <button
+                type="button"
+                className="inline-flex items-center px-4 py-2.5 text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                onClick={() => setIsCertificateModalOpen(true)}
+              >
+                <FileCheck className="h-5 w-5 mr-2" />
+                Gerar Atestado
+              </button>
 
-              <div className="flex items-center space-x-3">
-                {attendance?.status === 'in_progress' && (
-                  <button
-                    type="button"
-                    className="inline-flex items-center px-4 py-2.5 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                    onClick={handleCancelar}
-                    disabled={isCancelling}
-                  >
-                    <Ban className="h-5 w-5 mr-2" />
-                    Cancelar
-                  </button>
-                )}
+              {attendance?.status === 'in_progress' && (
                 <button
                   type="button"
-                  className={`inline-flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 ${
-                    attendance?.status === 'completed'
-                      ? 'text-green-700 bg-green-50'
-                      : 'text-gray-700 bg-gray-50 hover:bg-gray-100 focus:ring-gray-500'
-                  }`}
-                  onClick={handleFinalizar}
-                  disabled={isFinalizingAttendance || attendance?.status !== 'in_progress'}
+                  className="inline-flex items-center px-4 py-2.5 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                  onClick={handleCancelar}
+                  disabled={isCancelling}
                 >
-                  <CheckCircle2 className="h-5 w-5 mr-2" />
-                  {attendance?.status === 'completed' ? 'Finalizado' : 'Finalizar'}
+                  <Ban className="h-5 w-5 mr-2" />
+                  Cancelar
                 </button>
-                <button
-                  type="button"
-                  className="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                  onClick={() => handleSalvar()}
-                  disabled={isFinalizingAttendance || attendance?.status !== 'in_progress'}
-                >
-                  <Save className="h-5 w-5 mr-2" />
-                  Salvar
-                </button>
-              </div>
+              )}
+
+              <button
+                type="button"
+                className={`inline-flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 ${
+                  attendance?.status === 'completed'
+                    ? 'text-green-700 bg-green-50'
+                    : 'text-gray-700 bg-gray-50 hover:bg-gray-100 focus:ring-gray-500'
+                }`}
+                onClick={handleFinalizar}
+                disabled={isFinalizingAttendance || attendance?.status !== 'in_progress'}
+              >
+                <CheckCircle2 className="h-5 w-5 mr-2" />
+                {attendance?.status === 'completed' ? 'Finalizado' : 'Finalizar Atendimento'}
+              </button>
+
+              <button
+                type="button"
+                className="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                onClick={() => handleSalvar()}
+                disabled={isFinalizingAttendance || attendance?.status !== 'in_progress'}
+              >
+                <Save className="h-5 w-5 mr-2" />
+                Salvar
+              </button>
             </div>
           </div>
         </div>

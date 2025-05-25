@@ -13,9 +13,11 @@ import {
   Activity,
   UserPlus,
   Clock,
-  Stethoscope
+  Stethoscope,
+  AlertOctagon
 } from 'lucide-react';
 import api from '../services/api';
+import { toast } from 'react-toastify';
 
 interface DashboardData {
   pacientes: {
@@ -41,6 +43,7 @@ interface DashboardData {
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<DashboardData>({
     pacientes: {
       total: 0,
@@ -62,15 +65,26 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
+        setError(null);
+
         const [pacientesRes, atendimentosRes, estoqueRes] = await Promise.all([
-          api.get('/pacientes/dashboard'),
-          api.get('/atendimentos/dashboard'),
+          api.get('/users/stats'),
+          api.get('/attendance/stats'),
           api.get('/medicamentos/relatorio')
         ]);
 
         setData({
-          pacientes: pacientesRes.data,
-          atendimentos: atendimentosRes.data,
+          pacientes: {
+            total: pacientesRes.data.totalPacientes || 0,
+            novos: pacientesRes.data.novosPacientes || 0,
+            agendados: pacientesRes.data.consultasAgendadas || 0
+          },
+          atendimentos: {
+            hoje: atendimentosRes.data.atendimentosHoje || 0,
+            semana: atendimentosRes.data.atendimentosSemana || 0,
+            especialidades: atendimentosRes.data.especialidades || []
+          },
           estoque: {
             total: estoqueRes.data.totalMedicamentos || 0,
             proximosVencimento: estoqueRes.data.medicamentosProximosVencimento?.length || 0,
@@ -79,19 +93,44 @@ const Dashboard = () => {
         });
       } catch (error) {
         console.error('Erro ao buscar dados do dashboard:', error);
+        setError('Não foi possível carregar os dados do dashboard');
+        toast.error('Erro ao carregar dados do dashboard. Tente novamente mais tarde.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
+
+    // Atualiza os dados a cada 5 minutos
+    const interval = setInterval(fetchData, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+          <AlertOctagon className="h-12 w-12 text-red-500 mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Ops! Algo deu errado</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Tentar novamente
+          </button>
         </div>
       </Layout>
     );
@@ -103,7 +142,7 @@ const Dashboard = () => {
         {/* Seção de Pacientes */}
         <div>
           <h2 className="text-lg font-medium text-gray-900 mb-4">Pacientes</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-[1000px]">
             <div className="bg-white overflow-hidden shadow rounded-lg">
               <div className="p-5">
                 <div className="flex items-center">
@@ -151,7 +190,7 @@ const Dashboard = () => {
         {/* Seção de Atendimentos */}
         <div>
           <h2 className="text-lg font-medium text-gray-900 mb-4">Atendimentos</h2>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 max-w-[1000px]">
             <div className="lg:col-span-2 bg-white shadow rounded-lg p-6">
               <h3 className="text-base font-medium text-gray-900 mb-4">Por Especialidade</h3>
               <div className="space-y-4">
@@ -207,7 +246,7 @@ const Dashboard = () => {
         {/* Seção de Estoque */}
         <div>
           <h2 className="text-lg font-medium text-gray-900 mb-4">Estoque</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-[1000px]">
             <div className="bg-white overflow-hidden shadow rounded-lg">
               <div className="p-5">
                 <div className="flex items-center">

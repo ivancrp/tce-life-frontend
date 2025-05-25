@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import { Add as AddIcon, Search as SearchIcon, Warning as WarningIcon } from '@mui/icons-material';
 import api from '../services/api';
+import { setupAuthToken } from '../utils/auth';
 
 interface Medicamento {
     id: string;
@@ -47,49 +48,59 @@ const EstoqueMedicamentos: React.FC = () => {
 
     const carregarMedicamentos = async () => {
         try {
+            setupAuthToken();
             const response = await api.get('/medicamentos/relatorio');
             setMedicamentos(response.data.medicamentos);
             setMedicamentosProximosVencimento(response.data.medicamentosProximosVencimento);
         } catch (error) {
+            console.error('Erro ao carregar medicamentos:', error);
             setError('Erro ao carregar medicamentos');
         }
     };
 
     const verificarVencimentoProximo = async () => {
         try {
+            setupAuthToken();
             const response = await api.get('/medicamentos/vencimento');
             setMedicamentosProximosVencimento(response.data);
         } catch (error) {
+            console.error('Erro ao verificar medicamentos próximos do vencimento:', error);
             setError('Erro ao verificar medicamentos próximos do vencimento');
         }
     };
 
     const handleSearch = async () => {
         try {
+            setupAuthToken();
             const endpoint = searchType === 'nome' ? '/medicamentos/nome' : '/medicamentos/fabricante';
             const response = await api.get(endpoint, { params: { [searchType]: searchTerm } });
             setMedicamentos(response.data);
         } catch (error) {
+            console.error('Erro ao buscar medicamentos:', error);
             setError('Erro ao buscar medicamentos');
         }
     };
 
     const handleCadastrarMedicamento = async () => {
         try {
+            setupAuthToken();
             await api.post('/medicamentos', novoMedicamento);
             setOpenDialog(false);
             setNovoMedicamento({});
             carregarMedicamentos();
         } catch (error) {
+            console.error('Erro ao cadastrar medicamento:', error);
             setError('Erro ao cadastrar medicamento');
         }
     };
 
     const handleAtualizarEstoque = async (id: string, quantidade: number) => {
         try {
+            setupAuthToken();
             await api.put(`/medicamentos/${id}/estoque`, { quantidade });
             carregarMedicamentos();
         } catch (error) {
+            console.error('Erro ao atualizar estoque:', error);
             setError('Erro ao atualizar estoque');
         }
     };
