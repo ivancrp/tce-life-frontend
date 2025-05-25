@@ -90,7 +90,7 @@ export const scheduleService = {
       console.log('Token atual:', token ? 'Presente' : 'Ausente');
       console.log('Headers da requisição:', api.defaults.headers);
       
-      const response = await api.get<any[]>('/schedules');
+      const response = await api.get<any[]>('/schedule');
       console.log('Resposta da API (getAll):', response.data);
       return response.data.map(formatSchedule);
     } catch (error) {
@@ -102,7 +102,7 @@ export const scheduleService = {
   getById: async (id: string) => {
     try {
       setupAuthToken();
-      const response = await api.get<any>(`/schedules/${id}`);
+      const response = await api.get<any>(`/schedule/${id}`);
       console.log('Resposta da API (getById):', response.data);
       return formatSchedule(response.data);
     } catch (error) {
@@ -114,7 +114,7 @@ export const scheduleService = {
   getByUserId: async (userId: string) => {
     try {
       setupAuthToken();
-      const response = await api.get<any[]>(`/schedules/user/${userId}`);
+      const response = await api.get<any[]>(`/schedule/user/${userId}`);
       console.log('Resposta da API (getByUserId):', response.data);
       return response.data.map(formatSchedule);
     } catch (error: any) {
@@ -155,7 +155,7 @@ export const scheduleService = {
     try {
       setupAuthToken();
       console.log('Enviando dados para criar agendamento:', data);
-      const response = await api.post('/schedules', data);
+      const response = await api.post('/schedule', data);
       console.log('Resposta da API (create):', response.data);
       return formatSchedule(response.data);
     } catch (error: any) {
@@ -199,7 +199,7 @@ export const scheduleService = {
   update: async (id: string, data: Partial<Schedule>) => {
     try {
       setupAuthToken();
-      const response = await api.put(`/schedules/${id}`, data);
+      const response = await api.put(`/schedule/${id}`, data);
       console.log('Resposta da API (update):', response.data);
       return formatSchedule(response.data);
     } catch (error) {
@@ -208,12 +208,38 @@ export const scheduleService = {
     }
   },
 
-  delete: async (id: string) => {
+  cancel: async (id: string) => {
     try {
       setupAuthToken();
-      await api.delete(`/schedules/${id}`);
+      const response = await api.patch(`/schedule/${id}/cancel`);
+      console.log('Resposta da API (cancel):', response.data);
+      return formatSchedule(response.data);
     } catch (error) {
-      console.error('Erro ao excluir agendamento:', error);
+      console.error('Erro ao cancelar agendamento:', error);
+      throw error;
+    }
+  },
+
+  confirm: async (id: string) => {
+    try {
+      setupAuthToken();
+      const response = await api.patch(`/schedule/${id}/confirm`);
+      console.log('Resposta da API (confirm):', response.data);
+      return formatSchedule(response.data);
+    } catch (error) {
+      console.error('Erro ao confirmar agendamento:', error);
+      throw error;
+    }
+  },
+
+  complete: async (id: string) => {
+    try {
+      setupAuthToken();
+      const response = await api.patch(`/schedule/${id}/complete`);
+      console.log('Resposta da API (complete):', response.data);
+      return formatSchedule(response.data);
+    } catch (error) {
+      console.error('Erro ao completar agendamento:', error);
       throw error;
     }
   }

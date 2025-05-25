@@ -30,9 +30,11 @@ import {
   Ban
 } from 'lucide-react';
 import Button from '../components/Button';
-import { attendanceService, Attendance, VitalSigns } from '../services/attendance.service';
+import { attendanceService, Attendance, VitalSigns, Medication } from '../services/attendance.service';
 import PrescriptionModal from '../components/PrescriptionModal';
 import CertificateModal from '../components/CertificateModal';
+import AddAllergyModal from '../components/AddAllergyModal';
+import AddMedicationInUseModal, { MedicationInUse } from '../components/AddMedicationInUseModal';
 import InputMask from 'react-input-mask';
 import { toast } from 'react-hot-toast';
 
@@ -122,6 +124,8 @@ export function AtendimentoPage() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isAddAllergyModalOpen, setIsAddAllergyModalOpen] = useState(false);
+  const [isAddMedicationModalOpen, setIsAddMedicationModalOpen] = useState(false);
 
   // Estados para todos os campos do atendimento
   const [symptoms, setSymptoms] = useState('');
@@ -266,17 +270,22 @@ export function AtendimentoPage() {
   };
 
   const handleFinalizarAtendimento = async () => {
-    if (!scheduleId || !attendance) return;
+    if (!attendance?.id) return;
 
     try {
       // Primeiro salva os dados atuais do atendimento
       await handleSave();
       
-      // Depois finaliza o atendimento
-      const finishedAttendance = await attendanceService.complete(scheduleId);
+      // Depois finaliza o atendimento usando o ID do atendimento
+      const finishedAttendance = await attendanceService.complete(attendance.id);
       setAttendance(finishedAttendance);
       
       toast.success('Atendimento finalizado com sucesso!');
+      
+      // Aguarda um breve momento para mostrar a mensagem de sucesso
+      setTimeout(() => {
+        navigate('/schedule');
+      }, 1500);
     } catch (error) {
       console.error('Erro ao finalizar atendimento:', error);
       toast.error('Erro ao finalizar atendimento. Por favor, tente novamente.');
@@ -288,20 +297,79 @@ export function AtendimentoPage() {
   };
 
   const handleConfirmCancel = async () => {
-    if (!scheduleId || !attendance || !cancelReason.trim()) return;
+    if (!attendance?.id || !cancelReason.trim()) return;
 
     try {
       setIsCancelling(true);
-      const cancelledAttendance = await attendanceService.cancel(scheduleId, cancelReason);
+      const cancelledAttendance = await attendanceService.cancel(attendance.id, cancelReason);
       setAttendance(cancelledAttendance);
       toast.success('Atendimento cancelado com sucesso!');
-      setShowCancelModal(false);
-      navigate('/schedule');
+      
+      // Aguarda um breve momento para mostrar a mensagem de sucesso
+      setTimeout(() => {
+        setShowCancelModal(false);
+        navigate('/schedule');
+      }, 1500);
     } catch (error) {
       console.error('Erro ao cancelar atendimento:', error);
       toast.error('Erro ao cancelar atendimento. Por favor, tente novamente.');
     } finally {
       setIsCancelling(false);
+    }
+  };
+
+  const handleAddAllergy = async (newAllergies: string[]) => {
+    try {
+      if (attendance?.patient?.id) {
+        let updatedPatient = attendance.patient;
+        
+        for (const allergy of newAllergies) {
+          updatedPatient = await attendanceService.addAllergy(attendance.patient.id, allergy);
+        }
+        
+        setAttendance({
+          ...attendance,
+          patient: updatedPatient
+        });
+        
+        toast.success(`${newAllergies.length} ${newAllergies.length === 1 ? 'alergia adicionada' : 'alergias adicionadas'} com sucesso!`);
+      }
+    } catch (error) {
+      console.error('Erro ao adicionar alergias:', error);
+      toast.error('Erro ao adicionar alergias. Por favor, tente novamente.');
+    }
+  };
+
+  const handleAddMedication = async (medicationInUse: MedicationInUse) => {
+    try {
+      if (attendance?.patient?.id) {
+        // Converter o formato antigo para o novo
+        const medication: Medication = {
+          id: '',
+          userId: attendance.patient.id,
+          attendanceId: null,
+          name: medicationInUse.nome,
+          dosage: medicationInUse.dosagem,
+          frequency: medicationInUse.frequencia,
+          duration: null,
+          instructions: medicationInUse.instrucoes,
+          startDate: new Date(medicationInUse.dataInicio),
+          endDate: medicationInUse.dataFim ? new Date(medicationInUse.dataFim) : null,
+          active: medicationInUse.status === 'ativo',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+
+        const updatedPatient = await attendanceService.addMedication(attendance.patient.id, medication);
+        setAttendance({
+          ...attendance,
+          patient: updatedPatient
+        });
+        toast.success('Medicamento adicionado com sucesso!');
+      }
+    } catch (error) {
+      console.error('Erro ao adicionar medicamento:', error);
+      toast.error('Erro ao adicionar medicamento. Por favor, tente novamente.');
     }
   };
 
@@ -511,25 +579,81 @@ export function AtendimentoPage() {
             {/* Card de Histórico Médico */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Histórico Médico</h3>
-              <div className="space-y-4">
-                <div className="flex items-start">
-                  <AlertCircle className="h-5 w-5 text-gray-400 mt-1 mr-3" />
-                  <div>
+              <div className="space-y-6">
+                {/* Seção de Alergias */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
                     <p className="text-sm text-gray-500">Alergias</p>
+                    <button
+                      onClick={() => setIsAddAllergyModalOpen(true)}
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    >
+                      + Adicionar
+                    </button>
+                  </div>
+                  <div className="flex items-start">
+                    <AlertCircle className="h-5 w-5 text-gray-400 mt-1 mr-3" />
                     <p className="font-medium">{attendance.patient?.allergies?.join(', ') || 'Nenhuma'}</p>
                   </div>
                 </div>
-                <div className="flex items-start">
-                  <Pill className="h-5 w-5 text-gray-400 mt-1 mr-3" />
-                  <div>
+
+                {/* Seção de Medicamentos em Uso */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
                     <p className="text-sm text-gray-500">Medicamentos em Uso</p>
-                    <p className="font-medium">{attendance.patient?.medications?.join(', ') || 'Nenhum'}</p>
+                    <button
+                      onClick={() => setIsAddMedicationModalOpen(true)}
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    >
+                      + Adicionar
+                    </button>
+                  </div>
+                  <div className="flex items-start">
+                    <Pill className="h-5 w-5 text-gray-400 mt-1 mr-3" />
+                    <div className="flex-1">
+                      <div className="space-y-2">
+                        {attendance.patient?.medications && attendance.patient.medications.length > 0 ? (
+                          attendance.patient.medications.map((med, index) => (
+                            <div key={index} className="bg-gray-50 p-3 rounded-md">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <p className="font-medium">{med.name}</p>
+                                  <p className="text-sm text-gray-600">
+                                    {med.dosage} - {med.frequency}
+                                  </p>
+                                  {med.instructions && (
+                                    <p className="text-sm text-gray-600">
+                                      {med.instructions}
+                                    </p>
+                                  )}
+                                  <p className="text-sm text-gray-500 mt-1">
+                                    Início: {new Date(med.startDate).toLocaleDateString()}
+                                    {med.endDate && ` - Fim: ${new Date(med.endDate).toLocaleDateString()}`}
+                                  </p>
+                                </div>
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                  med.active 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {med.active ? 'Ativo' : 'Inativo'}
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-600">Nenhum medicamento em uso</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-start">
-                  <ActivityIcon className="h-5 w-5 text-gray-400 mt-1 mr-3" />
-                  <div>
-                    <p className="text-sm text-gray-500">Condições Crônicas</p>
+
+                {/* Seção de Condições Crônicas */}
+                <div>
+                  <p className="text-sm text-gray-500 mb-2">Condições Crônicas</p>
+                  <div className="flex items-start">
+                    <ActivityIcon className="h-5 w-5 text-gray-400 mt-1 mr-3" />
                     <p className="font-medium">{attendance.patient?.chronicDiseases?.join(', ') || 'Nenhuma'}</p>
                   </div>
                 </div>
@@ -797,6 +921,9 @@ export function AtendimentoPage() {
         isOpen={isCertificateModalOpen}
         onClose={() => setIsCertificateModalOpen(false)}
         patientName={attendance.patient?.name || 'Paciente'}
+        doctorName={attendance.doctor?.name || 'Médico'}
+        attendanceDate={new Date(attendance.createdAt)}
+        attendanceTime={format(new Date(attendance.createdAt), 'HH:mm')}
       />
 
       {/* Modal de Finalização */}
@@ -904,6 +1031,19 @@ export function AtendimentoPage() {
           </div>
         </div>
       )}
+
+      {/* Modais */}
+      <AddAllergyModal
+        isOpen={isAddAllergyModalOpen}
+        onClose={() => setIsAddAllergyModalOpen(false)}
+        onSave={handleAddAllergy}
+      />
+
+      <AddMedicationInUseModal
+        isOpen={isAddMedicationModalOpen}
+        onClose={() => setIsAddMedicationModalOpen(false)}
+        onSave={handleAddMedication}
+      />
     </div>
   );
 }

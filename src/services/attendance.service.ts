@@ -11,6 +11,22 @@ export interface VitalSigns {
   height?: number;
 }
 
+export interface Medication {
+  id: string;
+  userId: string;
+  attendanceId: string | null;
+  name: string;
+  dosage: string;
+  frequency: string;
+  duration: string | null;
+  instructions: string | null;
+  startDate: Date;
+  endDate: Date | null;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Patient {
   id: string;
   name: string;
@@ -22,7 +38,7 @@ export interface Patient {
   workPhone?: string;
   profilePicture?: string;
   allergies?: string[];
-  medications?: string[];
+  medications?: Medication[];
   chronicDiseases?: string[];
   gender?: string;
   raca?: string;
@@ -31,22 +47,37 @@ export interface Patient {
 export interface Attendance {
   id: string;
   scheduleId: string;
-  patientId: string;
   doctorId: string;
-  patient: Patient;
+  doctor: {
+    id: string;
+    name: string;
+    crm: string;
+  };
+  patient: {
+    id: string;
+    name: string;
+    email: string;
+    telefone: string;
+    celular: string;
+    gender: string;
+    raca: string;
+    allergies: string[];
+    medications: Medication[];
+    chronicDiseases: string[];
+    profilePicture?: string;
+  };
+  status: 'in_progress' | 'completed' | 'cancelled';
   symptoms: string;
   diagnosis: string;
   prescription: string;
   observations: string;
-  anamnesis: string;
-  vitalSigns: VitalSigns;
-  status: 'in_progress' | 'completed' | 'cancelled';
+  vitalSigns?: VitalSigns;
   createdAt: string;
   updatedAt: string;
 }
 
 class AttendanceService {
-  private readonly baseUrl = '/attendances';
+  private readonly baseUrl = '/attendance';
 
   async create(data: Partial<Attendance>): Promise<Attendance> {
     setupAuthToken();
@@ -63,7 +94,7 @@ class AttendanceService {
   async getByScheduleId(scheduleId: string): Promise<Attendance> {
     setupAuthToken();
     console.log('Buscando atendimento pelo scheduleId:', scheduleId);
-    const response = await api.get(`${this.baseUrl}/schedule/${scheduleId}`);
+    const response = await api.get(`/attendance/schedule/${scheduleId}`);
     console.log('Resposta do servidor (getByScheduleId):', response.data);
     return response.data;
   }
@@ -113,6 +144,46 @@ class AttendanceService {
     const response = await api.put(`${this.baseUrl}/${id}/cancel`, { reason });
     console.log('Resposta do servidor (cancel):', response.data);
     return response.data;
+  }
+
+  async addAllergy(patientId: string, allergy: string): Promise<Patient> {
+    const response = await api.post(`/patients/${patientId}/allergies`, { allergy });
+    return response.data;
+  }
+
+  async removeAllergy(patientId: string, allergy: string): Promise<Patient> {
+    const response = await api.delete(`/patients/${patientId}/allergies/${encodeURIComponent(allergy)}`);
+    return response.data;
+  }
+
+  async addMedication(patientId: string, medication: Omit<Medication, 'id' | 'prescritoPor' | 'status'>) {
+    try {
+      const response = await api.post(`/patients/${patientId}/medications`, medication);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao adicionar medicamento:', error);
+      throw error;
+    }
+  }
+
+  async updateMedication(patientId: string, medicationId: string, medication: Omit<Medication, 'id' | 'prescritoPor'>) {
+    try {
+      const response = await api.put(`/patients/${patientId}/medications/${medicationId}`, medication);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao atualizar medicamento:', error);
+      throw error;
+    }
+  }
+
+  async removeMedication(patientId: string, medicationId: string) {
+    try {
+      const response = await api.delete(`/patients/${patientId}/medications/${medicationId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao remover medicamento:', error);
+      throw error;
+    }
   }
 }
 
