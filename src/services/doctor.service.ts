@@ -24,7 +24,7 @@ export const doctorService = {
   getAll: async () => {
     try {
       setupAuthToken();
-      const response = await api.get<Doctor[]>('/api/users/doctors');
+      const response = await api.get<Doctor[]>('/users/doctors');
       return response.data.filter(doctor => doctor.isActive);
     } catch (error: any) {
       console.error('Erro ao buscar médicos:', error);
@@ -49,7 +49,7 @@ export const doctorService = {
   getById: async (id: string) => {
     try {
       setupAuthToken();
-      const response = await api.get<Doctor>(`/api/users/${id}`);
+      const response = await api.get<Doctor>(`/users/${id}`);
       return response.data;
     } catch (error) {
       console.error('Erro ao buscar médico:', error);

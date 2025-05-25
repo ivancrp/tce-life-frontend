@@ -11,7 +11,7 @@ export const specialtyService = {
   getAll: async () => {
     try {
       setupAuthToken();
-      const response = await api.get<Specialty[]>('/api/specialties');
+      const response = await api.get<Specialty[]>('/specialties');
       return response.data;
     } catch (error: any) {
       console.error('Erro ao buscar especialidades:', error);
@@ -36,7 +36,7 @@ export const specialtyService = {
   getById: async (id: string) => {
     try {
       setupAuthToken();
-      const response = await api.get<Specialty>(`/api/specialties/${id}`);
+      const response = await api.get<Specialty>(`/specialties/${id}`);
       return response.data;
     } catch (error) {
       console.error('Erro ao buscar especialidade:', error);
@@ -47,7 +47,7 @@ export const specialtyService = {
   create: async (data: Omit<Specialty, 'id'>) => {
     try {
       setupAuthToken();
-      const response = await api.post<Specialty>('/api/specialties', data);
+      const response = await api.post<Specialty>('/specialties', data);
       return response.data;
     } catch (error) {
       console.error('Erro ao criar especialidade:', error);
@@ -58,7 +58,7 @@ export const specialtyService = {
   update: async (id: string, data: Partial<Specialty>) => {
     try {
       setupAuthToken();
-      const response = await api.put<Specialty>(`/api/specialties/${id}`, data);
+      const response = await api.put<Specialty>(`/specialties/${id}`, data);
       return response.data;
     } catch (error) {
       console.error('Erro ao atualizar especialidade:', error);
@@ -69,7 +69,7 @@ export const specialtyService = {
   delete: async (id: string) => {
     try {
       setupAuthToken();
-      await api.delete(`/api/specialties/${id}`);
+      await api.delete(`/specialties/${id}`);
     } catch (error) {
       console.error('Erro ao deletar especialidade:', error);
       throw error;
@@ -79,7 +79,7 @@ export const specialtyService = {
   assignToUser: async (userId: string, specialties: string[]) => {
     try {
       setupAuthToken();
-      const response = await api.post('/api/specialties/assign', {
+      const response = await api.post('/specialties/assign', {
         userId,
         specialties
       });

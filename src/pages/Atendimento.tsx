@@ -26,12 +26,85 @@ import {
   Activity as ActivityIcon,
   ArrowLeft,
   XCircle,
-  CheckCircle2
+  CheckCircle2,
+  Ban
 } from 'lucide-react';
 import Button from '../components/Button';
-import { attendanceService, Attendance } from '../services/attendance.service';
+import { attendanceService, Attendance, VitalSigns } from '../services/attendance.service';
 import PrescriptionModal from '../components/PrescriptionModal';
 import CertificateModal from '../components/CertificateModal';
+import InputMask from 'react-input-mask';
+import { toast } from 'react-hot-toast';
+
+interface VitalSignsInput {
+  temperature: string;
+  bloodPressure: string;
+  heartRate: string;
+  respiratoryRate: string;
+  oxygenSaturation: string;
+  weight: string;
+  height: string;
+}
+
+interface VitalSignsErrors {
+  temperature?: string;
+  bloodPressure?: string;
+  heartRate?: string;
+  respiratoryRate?: string;
+  oxygenSaturation?: string;
+  weight?: string;
+  height?: string;
+}
+
+const validateVitalSigns = (vitalSigns: VitalSignsInput): VitalSignsErrors => {
+  const errors: VitalSignsErrors = {};
+
+  // Temperatura (35°C - 42°C)
+  const temp = parseFloat(vitalSigns.temperature);
+  if (temp && (temp < 35 || temp > 42)) {
+    errors.temperature = 'Temperatura deve estar entre 35°C e 42°C';
+  }
+
+  // Pressão Arterial (formato XXX/XX)
+  if (vitalSigns.bloodPressure) {
+    const [systolic, diastolic] = vitalSigns.bloodPressure.split('/').map(Number);
+    if (systolic < 70 || systolic > 200 || diastolic < 40 || diastolic > 130) {
+      errors.bloodPressure = 'Pressão arterial fora dos limites normais';
+    }
+  }
+
+  // Frequência Cardíaca (40-200 bpm)
+  const hr = parseInt(vitalSigns.heartRate);
+  if (hr && (hr < 40 || hr > 200)) {
+    errors.heartRate = 'Frequência cardíaca deve estar entre 40 e 200 bpm';
+  }
+
+  // Frequência Respiratória (8-40 rpm)
+  const rr = parseInt(vitalSigns.respiratoryRate);
+  if (rr && (rr < 8 || rr > 40)) {
+    errors.respiratoryRate = 'Frequência respiratória deve estar entre 8 e 40 rpm';
+  }
+
+  // Saturação O2 (60-100%)
+  const o2 = parseInt(vitalSigns.oxygenSaturation);
+  if (o2 && (o2 < 60 || o2 > 100)) {
+    errors.oxygenSaturation = 'Saturação de O2 deve estar entre 60% e 100%';
+  }
+
+  // Peso (0.5-300 kg)
+  const weight = parseFloat(vitalSigns.weight);
+  if (weight && (weight < 0.5 || weight > 300)) {
+    errors.weight = 'Peso deve estar entre 0.5 e 300 kg';
+  }
+
+  // Altura (0.3-2.5 m)
+  const height = parseFloat(vitalSigns.height);
+  if (height && (height < 0.3 || height > 2.5)) {
+    errors.height = 'Altura deve estar entre 0.3 e 2.5 metros';
+  }
+
+  return errors;
+};
 
 export function AtendimentoPage() {
   const { id: scheduleId } = useParams<{ id: string }>();
@@ -41,19 +114,21 @@ export function AtendimentoPage() {
   const [error, setError] = useState<string | null>(null);
   const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false);
   const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
-  const [modalProntuarioAberto, setModalProntuarioAberto] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isFinalizingAttendance, setIsFinalizingAttendance] = useState(false);
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
   const [finalizationSuccess, setFinalizationSuccess] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Estados para todos os campos do atendimento
   const [symptoms, setSymptoms] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
   const [prescription, setPrescription] = useState('');
   const [observations, setObservations] = useState('');
-  const [vitalSigns, setVitalSigns] = useState({
+  const [vitalSigns, setVitalSigns] = useState<VitalSignsInput>({
     temperature: '',
     bloodPressure: '',
     heartRate: '',
@@ -62,6 +137,8 @@ export function AtendimentoPage() {
     weight: '',
     height: ''
   });
+
+  const [vitalSignsErrors, setVitalSignsErrors] = useState<VitalSignsErrors>({});
 
   useEffect(() => {
     if (scheduleId) {
@@ -100,32 +177,34 @@ export function AtendimentoPage() {
 
   // Função para atualizar sinais vitais
   const handleVitalSignsChange = (field: string, value: string) => {
-    setVitalSigns(prev => ({
-      ...prev,
+    const newVitalSigns = {
+      ...vitalSigns,
       [field]: value
-    }));
+    };
+    setVitalSigns(newVitalSigns);
+    
+    // Valida o campo alterado
+    const errors = validateVitalSigns(newVitalSigns);
+    setVitalSignsErrors(errors);
   };
 
   // Função de salvamento
-  const saveAttendance = useCallback(async () => {
-    if (!attendance) return;
-    
-    try {
-      console.log('Iniciando salvamento automático:', {
-        symptoms,
-        diagnosis,
-        prescription,
-        observations,
-        vitalSigns,
-        attendanceId: attendance.id
-      });
+  const handleSave = async () => {
+    if (!scheduleId || !attendance) return;
 
-      setIsSaving(true);
-      
-      // Converter sinais vitais para números onde necessário
-      const convertedVitalSigns = {
+    try {
+      // Valida os sinais vitais antes de salvar
+      const errors = validateVitalSigns(vitalSigns);
+      if (Object.keys(errors).length > 0) {
+        setVitalSignsErrors(errors);
+        toast.error('Por favor, corrija os valores dos sinais vitais antes de salvar.');
+        return;
+      }
+
+      // Converte os valores dos sinais vitais para números
+      const numericVitalSigns: VitalSigns = {
         temperature: vitalSigns.temperature ? parseFloat(vitalSigns.temperature) : undefined,
-        bloodPressure: vitalSigns.bloodPressure,
+        bloodPressure: vitalSigns.bloodPressure || undefined,
         heartRate: vitalSigns.heartRate ? parseInt(vitalSigns.heartRate) : undefined,
         respiratoryRate: vitalSigns.respiratoryRate ? parseInt(vitalSigns.respiratoryRate) : undefined,
         oxygenSaturation: vitalSigns.oxygenSaturation ? parseInt(vitalSigns.oxygenSaturation) : undefined,
@@ -134,40 +213,38 @@ export function AtendimentoPage() {
       };
 
       const updatedAttendance = await attendanceService.update(attendance.id, {
+        ...attendance,
+        vitalSigns: numericVitalSigns,
         symptoms,
         diagnosis,
         prescription,
-        observations,
-        vitalSigns: convertedVitalSigns,
-        status: attendance.status
+        observations
       });
-      
-      console.log('Atendimento salvo com sucesso:', updatedAttendance);
+
       setAttendance(updatedAttendance);
       setLastSaved(new Date());
-    } catch (error: any) {
+      toast.success('Atendimento salvo com sucesso!');
+    } catch (error) {
       console.error('Erro ao salvar atendimento:', error);
-      alert('Erro ao salvar atendimento: ' + (error.response?.data?.message || error.message));
-    } finally {
-      setIsSaving(false);
+      toast.error('Erro ao salvar atendimento. Por favor, tente novamente.');
     }
-  }, [attendance, symptoms, diagnosis, prescription, observations, vitalSigns]);
+  };
 
   // Auto-save a cada 30 segundos quando houver mudanças
   useEffect(() => {
-    if (!attendance) return;
+    if (!scheduleId || !attendance) return;
 
-    console.log('Configurando auto-save para o atendimento:', attendance.id);
+    console.log('Configurando auto-save para o atendimento:', scheduleId);
     const timer = setInterval(() => {
       console.log('Executando auto-save...');
-      saveAttendance();
+      handleSave();
     }, 30000);
 
     return () => {
       console.log('Limpando timer de auto-save');
       clearInterval(timer);
     };
-  }, [saveAttendance]);
+  }, [handleSave, scheduleId, attendance]);
 
   // Monitora mudanças nos campos
   useEffect(() => {
@@ -180,7 +257,7 @@ export function AtendimentoPage() {
 
   const handleSalvar = async () => {
     if (!attendance) return;
-    await saveAttendance();
+    await handleSave();
     alert('Atendimento salvo com sucesso!');
   };
 
@@ -188,33 +265,43 @@ export function AtendimentoPage() {
     setShowFinalizeModal(true);
   };
 
-  const handleConfirmFinalize = async () => {
-    if (!attendance) return;
-    
+  const handleFinalizarAtendimento = async () => {
+    if (!scheduleId || !attendance) return;
+
     try {
-      setIsFinalizingAttendance(true);
-      
       // Primeiro salva os dados atuais do atendimento
-      await saveAttendance();
+      await handleSave();
       
       // Depois finaliza o atendimento
-      const finishedAttendance = await attendanceService.complete(attendance.id);
+      const finishedAttendance = await attendanceService.complete(scheduleId);
       setAttendance(finishedAttendance);
       
-      // Mostra feedback de sucesso no modal
-      setFinalizationSuccess(true);
-      
-      // Redireciona após 2 segundos
-      setTimeout(() => {
-        navigate('/schedule');
-      }, 2000);
-    } catch (error: any) {
+      toast.success('Atendimento finalizado com sucesso!');
+    } catch (error) {
       console.error('Erro ao finalizar atendimento:', error);
-      const errorMessage = error.response?.data?.message || 'Erro ao finalizar atendimento.';
-      alert(errorMessage);
-      setShowFinalizeModal(false);
+      toast.error('Erro ao finalizar atendimento. Por favor, tente novamente.');
+    }
+  };
+
+  const handleCancelar = () => {
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!scheduleId || !attendance || !cancelReason.trim()) return;
+
+    try {
+      setIsCancelling(true);
+      const cancelledAttendance = await attendanceService.cancel(scheduleId, cancelReason);
+      setAttendance(cancelledAttendance);
+      toast.success('Atendimento cancelado com sucesso!');
+      setShowCancelModal(false);
+      navigate('/schedule');
+    } catch (error) {
+      console.error('Erro ao cancelar atendimento:', error);
+      toast.error('Erro ao cancelar atendimento. Por favor, tente novamente.');
     } finally {
-      setIsFinalizingAttendance(false);
+      setIsCancelling(false);
     }
   };
 
@@ -315,31 +402,89 @@ export function AtendimentoPage() {
           <div className="lg:col-span-1 space-y-6">
             {/* Card de Informações Pessoais */}
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Informações do Paciente</h3>
+              <div className="flex items-start mb-6">
+                <div className="flex items-start">
+                  {attendance.patient?.profilePicture ? (
+                    <img
+                      src={attendance.patient.profilePicture}
+                      alt={`Foto de ${attendance.patient.name}`}
+                      className="h-16 w-16 rounded-full object-cover border-2 border-gray-200"
+                    />
+                  ) : (
+                    <div className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center">
+                      <User className="h-8 w-8 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="ml-4 flex-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-medium text-gray-900">{attendance.patient?.name || 'N/A'}</h3>
+                    </div>
+                    <div className="mt-1">
+                      <p className="text-sm text-gray-500">Informações Básicas</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-4">
                 <div className="flex items-start">
                   <User className="h-5 w-5 text-gray-400 mt-1 mr-3" />
                   <div>
-                    <p className="text-sm text-gray-500">Nome Completo</p>
-                    <p className="font-medium">{attendance.patient?.name || 'N/A'}</p>
+                    <p className="text-sm text-gray-500">Sexo</p>
+                    <p className="font-medium">
+                      {attendance.patient?.gender === 'M' ? 'Masculino' : 
+                       attendance.patient?.gender === 'F' ? 'Feminino' : 
+                       attendance.patient?.gender || 'N/A'}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <Calendar className="h-5 w-5 text-gray-400 mt-1 mr-3" />
+                  <User className="h-5 w-5 text-gray-400 mt-1 mr-3" />
                   <div>
-                    <p className="text-sm text-gray-500">Data de Nascimento</p>
+                    <p className="text-sm text-gray-500">Raça/Etnia</p>
+                    <p className="font-medium">{attendance.patient?.raca || 'N/A'}</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <Phone className="h-5 w-5 text-gray-400 mt-1 mr-3" />
+                  <div>
+                    <p className="text-sm text-gray-500">Telefone - TCE</p>
                     <p className="font-medium">
-                      {attendance.patient?.dateOfBirth ? 
-                        format(new Date(attendance.patient.dateOfBirth), 'dd/MM/yyyy') : 
-                        'N/A'}
+                      <InputMask
+                        mask="(99) 9999-9999"
+                        maskChar={null}
+                        value={attendance.patient?.telefone || ''}
+                        disabled
+                        className="bg-transparent border-none p-0 font-medium"
+                      />
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start">
                   <Phone className="h-5 w-5 text-gray-400 mt-1 mr-3" />
                   <div>
-                    <p className="text-sm text-gray-500">Telefone</p>
-                    <p className="font-medium">{attendance.patient?.phone || 'N/A'}</p>
+                    <p className="text-sm text-gray-500">Celular</p>
+                    <p className="font-medium flex items-center">
+                      <InputMask
+                        mask="(99) 99999-9999"
+                        maskChar={null}
+                        value={attendance.patient?.celular || ''}
+                        disabled
+                        className="bg-transparent border-none p-0 font-medium"
+                      />
+                      {attendance.patient?.celular && (
+                        <a
+                          href={`https://wa.me/55${attendance.patient.celular.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-2 text-green-500 hover:text-green-600"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                          </svg>
+                        </a>
+                      )}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start">
@@ -349,6 +494,17 @@ export function AtendimentoPage() {
                     <p className="font-medium">{attendance.patient?.email || 'N/A'}</p>
                   </div>
                 </div>
+              </div>
+
+              <div className="mt-6 flex justify-center">
+                <button
+                  type="button"
+                  className="inline-flex items-center px-6 py-2.5 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm"
+                  onClick={() => navigate(`/medical-records/${attendance.patient?.id}`)}
+                >
+                  <FileText className="h-5 w-5 mr-2" />
+                  Prontuário Completo
+                </button>
               </div>
             </div>
 
@@ -392,94 +548,140 @@ export function AtendimentoPage() {
                     <Thermometer className="h-4 w-4 inline mr-2" />
                     Temperatura (°C)
                   </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  <InputMask
+                    mask="99.9"
+                    maskChar={null}
+                    type="text"
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                      vitalSignsErrors.temperature ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     value={vitalSigns.temperature}
-                    onChange={(e) => handleVitalSignsChange('temperature', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleVitalSignsChange('temperature', e.target.value)}
                     placeholder="36.5"
                   />
+                  {vitalSignsErrors.temperature && (
+                    <p className="text-red-500 text-xs mt-1">{vitalSignsErrors.temperature}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     <Heart className="h-4 w-4 inline mr-2" />
                     Pressão Arterial
                   </label>
-                  <input
+                  <InputMask
+                    mask="999/99"
+                    maskChar={null}
                     type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                      vitalSignsErrors.bloodPressure ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     value={vitalSigns.bloodPressure}
-                    onChange={(e) => handleVitalSignsChange('bloodPressure', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleVitalSignsChange('bloodPressure', e.target.value)}
                     placeholder="120/80"
                   />
+                  {vitalSignsErrors.bloodPressure && (
+                    <p className="text-red-500 text-xs mt-1">{vitalSignsErrors.bloodPressure}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     <Activity className="h-4 w-4 inline mr-2" />
                     Freq. Cardíaca (bpm)
                   </label>
-                  <input
-                    type="number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  <InputMask
+                    mask="999"
+                    maskChar={null}
+                    type="text"
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                      vitalSignsErrors.heartRate ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     value={vitalSigns.heartRate}
-                    onChange={(e) => handleVitalSignsChange('heartRate', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleVitalSignsChange('heartRate', e.target.value)}
                     placeholder="80"
                   />
+                  {vitalSignsErrors.heartRate && (
+                    <p className="text-red-500 text-xs mt-1">{vitalSignsErrors.heartRate}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     <Wind className="h-4 w-4 inline mr-2" />
                     Freq. Respiratória (rpm)
                   </label>
-                  <input
-                    type="number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  <InputMask
+                    mask="99"
+                    maskChar={null}
+                    type="text"
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                      vitalSignsErrors.respiratoryRate ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     value={vitalSigns.respiratoryRate}
-                    onChange={(e) => handleVitalSignsChange('respiratoryRate', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleVitalSignsChange('respiratoryRate', e.target.value)}
                     placeholder="16"
                   />
+                  {vitalSignsErrors.respiratoryRate && (
+                    <p className="text-red-500 text-xs mt-1">{vitalSignsErrors.respiratoryRate}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     <Activity className="h-4 w-4 inline mr-2" />
                     Saturação O2 (%)
                   </label>
-                  <input
-                    type="number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  <InputMask
+                    mask="99"
+                    maskChar={null}
+                    type="text"
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                      vitalSignsErrors.oxygenSaturation ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     value={vitalSigns.oxygenSaturation}
-                    onChange={(e) => handleVitalSignsChange('oxygenSaturation', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleVitalSignsChange('oxygenSaturation', e.target.value)}
                     placeholder="98"
                   />
+                  {vitalSignsErrors.oxygenSaturation && (
+                    <p className="text-red-500 text-xs mt-1">{vitalSignsErrors.oxygenSaturation}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     <Weight className="h-4 w-4 inline mr-2" />
                     Peso (kg)
                   </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  <InputMask
+                    mask="999.9"
+                    maskChar={null}
+                    type="text"
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                      vitalSignsErrors.weight ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     value={vitalSigns.weight}
-                    onChange={(e) => handleVitalSignsChange('weight', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleVitalSignsChange('weight', e.target.value)}
                     placeholder="70.5"
                   />
+                  {vitalSignsErrors.weight && (
+                    <p className="text-red-500 text-xs mt-1">{vitalSignsErrors.weight}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     <Ruler className="h-4 w-4 inline mr-2" />
                     Altura (m)
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  <InputMask
+                    mask="9.99"
+                    maskChar={null}
+                    type="text"
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                      vitalSignsErrors.height ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     value={vitalSigns.height}
-                    onChange={(e) => handleVitalSignsChange('height', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleVitalSignsChange('height', e.target.value)}
                     placeholder="1.75"
                   />
+                  {vitalSignsErrors.height && (
+                    <p className="text-red-500 text-xs mt-1">{vitalSignsErrors.height}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -533,49 +735,50 @@ export function AtendimentoPage() {
             </div>
 
             {/* Botões de Ação */}
-            <div className="flex justify-between items-center">
-              <div className="flex space-x-4">
-                <Button
-                  variant="outline-primary"
-                  icon={FileText}
-                  onClick={() => setModalProntuarioAberto(true)}
-                >
-                  Prontuário Completo
-                </Button>
-                <Button
-                  variant="outline-success"
-                  icon={FileCheck}
-                  onClick={() => setIsCertificateModalOpen(true)}
-                >
-                  Gerar Atestado
-                </Button>
-              </div>
-              <div className="flex space-x-4">
+            <div className="flex justify-between items-center bg-white rounded-lg shadow-sm p-4">
+              <div className="flex items-center space-x-3">
                 <button
                   type="button"
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 flex items-center"
-                  onClick={handleFinalizar}
-                  disabled={isFinalizingAttendance || attendance?.status === 'completed'}
+                  className="inline-flex items-center px-4 py-2.5 text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  onClick={() => setIsCertificateModalOpen(true)}
                 >
-                  {attendance?.status === 'completed' ? (
-                    <>
-                      <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
-                      Atendimento Finalizado
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Finalizar Atendimento
-                    </>
-                  )}
+                  <FileCheck className="h-5 w-5 mr-2" />
+                  Gerar Atestado
+                </button>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                {attendance?.status === 'in_progress' && (
+                  <button
+                    type="button"
+                    className="inline-flex items-center px-4 py-2.5 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                    onClick={handleCancelar}
+                    disabled={isCancelling}
+                  >
+                    <Ban className="h-5 w-5 mr-2" />
+                    Cancelar
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={`inline-flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 ${
+                    attendance?.status === 'completed'
+                      ? 'text-green-700 bg-green-50'
+                      : 'text-gray-700 bg-gray-50 hover:bg-gray-100 focus:ring-gray-500'
+                  }`}
+                  onClick={handleFinalizar}
+                  disabled={isFinalizingAttendance || attendance?.status !== 'in_progress'}
+                >
+                  <CheckCircle2 className="h-5 w-5 mr-2" />
+                  {attendance?.status === 'completed' ? 'Finalizado' : 'Finalizar'}
                 </button>
                 <button
                   type="button"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 flex items-center"
+                  className="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                   onClick={() => handleSalvar()}
-                  disabled={isFinalizingAttendance || attendance?.status === 'completed'}
+                  disabled={isFinalizingAttendance || attendance?.status !== 'in_progress'}
                 >
-                  <Save className="h-4 w-4 mr-2" />
+                  <Save className="h-5 w-5 mr-2" />
                   Salvar
                 </button>
               </div>
@@ -633,7 +836,7 @@ export function AtendimentoPage() {
                   <button
                     type="button"
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 flex items-center"
-                    onClick={handleConfirmFinalize}
+                    onClick={handleFinalizarAtendimento}
                     disabled={isFinalizingAttendance}
                   >
                     {isFinalizingAttendance ? (
@@ -651,6 +854,53 @@ export function AtendimentoPage() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cancelamento */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Cancelar Atendimento</h3>
+            <p className="text-gray-600 mb-4">
+              Por favor, informe o motivo do cancelamento do atendimento:
+            </p>
+            <textarea
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 sm:text-sm mb-4"
+              rows={4}
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Ex: Paciente não compareceu à consulta"
+            />
+            <div className="flex justify-end space-x-4">
+              <button
+                type="button"
+                className="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium disabled:opacity-50"
+                onClick={() => setShowCancelModal(false)}
+                disabled={isCancelling}
+              >
+                Voltar
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 flex items-center"
+                onClick={handleConfirmCancel}
+                disabled={isCancelling || !cancelReason.trim()}
+              >
+                {isCancelling ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                    Cancelando...
+                  </>
+                ) : (
+                  <>
+                    <Ban className="h-4 w-4 mr-2" />
+                    Confirmar Cancelamento
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

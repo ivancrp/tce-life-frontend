@@ -17,10 +17,15 @@ export interface Patient {
   email: string;
   dateOfBirth: string;
   cpf: string;
-  phone: string;
+  telefone: string;
+  celular: string;
+  workPhone?: string;
+  profilePicture?: string;
   allergies?: string[];
   medications?: string[];
   chronicDiseases?: string[];
+  gender?: string;
+  raca?: string;
 }
 
 export interface Attendance {
@@ -35,7 +40,7 @@ export interface Attendance {
   observations: string;
   anamnesis: string;
   vitalSigns: VitalSigns;
-  status: 'in_progress' | 'completed';
+  status: 'in_progress' | 'completed' | 'cancelled';
   createdAt: string;
   updatedAt: string;
 }
@@ -99,6 +104,14 @@ class AttendanceService {
   async getByPatientId(patientId: string): Promise<Attendance[]> {
     setupAuthToken();
     const response = await api.get(`${this.baseUrl}/patient/${patientId}`);
+    return response.data;
+  }
+
+  async cancel(id: string, reason: string): Promise<Attendance> {
+    setupAuthToken();
+    console.log('Cancelando atendimento:', id, 'Motivo:', reason);
+    const response = await api.put(`${this.baseUrl}/${id}/cancel`, { reason });
+    console.log('Resposta do servidor (cancel):', response.data);
     return response.data;
   }
 }

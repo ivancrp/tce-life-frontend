@@ -46,8 +46,8 @@ const UserSpecialty: React.FC = () => {
 
       console.log('Fazendo requisição para /api/specialties/users...');
       const [usersResponse, specialtiesResponse] = await Promise.all([
-        api.get('/api/specialties/users'),
-        api.get('/api/specialties')
+        api.get('/specialties/users'),
+        api.get('/specialties')
       ]);
 
       console.log('Resposta de /api/specialties/users:', usersResponse.data);
