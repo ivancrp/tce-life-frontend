@@ -2,7 +2,7 @@ import React from 'react';
 import { LucideIcon } from 'lucide-react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'outline-primary' | 'outline-secondary' | 'outline-success' | 'outline-danger' | 'outline-warning';
+  variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'outline-primary' | 'outline-secondary' | 'outline-success' | 'outline-danger' | 'outline-warning' | 'patient-portal';
   size?: 'sm' | 'md' | 'lg';
   icon?: LucideIcon;
   children: React.ReactNode;
@@ -28,7 +28,8 @@ const Button: React.FC<ButtonProps> = ({
     'outline-secondary': 'border-2 border-gray-600 text-gray-600 hover:bg-gray-50 focus:ring-gray-500',
     'outline-success': 'border-2 border-green-600 text-green-600 hover:bg-green-50 focus:ring-green-500',
     'outline-danger': 'border-2 border-red-600 text-red-600 hover:bg-red-50 focus:ring-red-500',
-    'outline-warning': 'border-2 border-yellow-600 text-yellow-600 hover:bg-yellow-50 focus:ring-yellow-500'
+    'outline-warning': 'border-2 border-yellow-600 text-yellow-600 hover:bg-yellow-50 focus:ring-yellow-500',
+    'patient-portal': 'bg-[#4F46E5] text-white hover:bg-[#4338CA] focus:ring-[#4F46E5]'
   };
 
   const sizes = {

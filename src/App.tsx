@@ -39,7 +39,6 @@ const App = () => {
     { path: '/settings/specialty', element: <SpecialtySettings /> },
     { path: '/settings/ldap', element: <LDAPSettings /> },
     { path: '/atendimento/:id', element: <AtendimentoPage /> },
-    { path: '/portal-paciente', element: <PatientPortal /> },
   ];
 
   return (
@@ -51,6 +50,13 @@ const App = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/simple-login" element={<SimpleLogin />} />
             <Route path="/new-consultation" element={<NewConsultation />} />
+            
+            {/* Portal do Paciente */}
+            <Route path="/portal-paciente" element={
+              <ProtectedRoute allowedRoles={['Paciente']}>
+                <PatientPortal />
+              </ProtectedRoute>
+            } />
             
             {/* Rotas protegidas */}
             <Route element={<ProtectedRoute />}>

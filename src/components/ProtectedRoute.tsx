@@ -115,6 +115,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, children 
     return <Navigate to="/" replace />;
   }
 
+  // Se estiver no Portal do Paciente, não usar o Layout padrão
+  if (location.pathname === '/portal-paciente') {
+    return <>{children || <Outlet />}</>;
+  }
+
+  // Para outras rotas protegidas, usar o Layout padrão
   console.log('Usuário autenticado, renderizando rota protegida');
   return (
     <Layout>
