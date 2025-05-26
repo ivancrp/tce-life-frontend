@@ -13,6 +13,7 @@ import PatientPortal from './pages/PatientPortal';
 import UserSpecialty from './pages/Settings/UserSpecialty';
 import SpecialtySettings from './pages/Settings/Specialty';
 import LDAPSettings from './pages/Settings/LDAPConfig';
+import UserProfile from './pages/Settings/UserProfile';
 import PatientRecord from './pages/PatientRecord';
 import { ThemeProvider } from '@mui/material/styles';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -38,6 +39,7 @@ const App = () => {
     { path: '/settings/user-specialty', element: <UserSpecialty /> },
     { path: '/settings/specialty', element: <SpecialtySettings /> },
     { path: '/settings/ldap', element: <LDAPSettings /> },
+    { path: '/settings/profile', element: <UserProfile /> },
     { path: '/atendimento/:id', element: <AtendimentoPage /> },
   ];
 

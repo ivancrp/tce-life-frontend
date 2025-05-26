@@ -41,6 +41,7 @@ import RequestExamModal from '../components/RequestExamModal';
 import { ExamRequestModal } from '../components/ExamRequestModal';
 import ExamUploadModal from '../components/ExamUploadModal';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
+import Breadcrumbs from '../components/Breadcrumbs';
 
 interface VitalSignsInput {
   temperature: string;
@@ -426,6 +427,7 @@ export function AtendimentoPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Breadcrumbs />
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -1081,6 +1083,7 @@ export function AtendimentoPage() {
         isOpen={isCertificateModalOpen}
         onClose={() => setIsCertificateModalOpen(false)}
         patientName={attendance?.patient?.name || 'Paciente'}
+        patientCpf={attendance?.patient?.cpf || ''}
         doctorName={attendance?.doctor?.name || 'Médico'}
         attendanceDate={new Date(attendance?.createdAt)}
         attendanceTime={format(new Date(attendance?.createdAt), 'HH:mm')}

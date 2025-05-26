@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Breadcrumbs from '../components/Breadcrumbs';
 import { 
   Search,
   Download,
@@ -475,33 +476,36 @@ const Records = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
-      {error.visible && (
-        <ErrorNotification
-          message={error.message}
-          onDismiss={dismissError}
+    <div className="min-h-screen bg-gray-50 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Breadcrumbs />
+        {error.visible && (
+          <ErrorNotification
+            message={error.message}
+            onDismiss={dismissError}
+          />
+        )}
+
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+            <Users className="w-6 h-6" />
+            Lista de Pacientes
+          </h1>
+          <button
+            onClick={loadPatients}
+            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Atualizar lista
+          </button>
+        </div>
+
+        <PatientList
+          patients={patients}
+          onViewDetails={handleViewDetails}
+          isLoading={isLoading}
         />
-      )}
-
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
-          <Users className="w-6 h-6" />
-          Lista de Pacientes
-        </h1>
-        <button
-          onClick={loadPatients}
-          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Atualizar lista
-        </button>
       </div>
-
-      <PatientList
-        patients={patients}
-        onViewDetails={handleViewDetails}
-        isLoading={isLoading}
-      />
     </div>
   );
 };

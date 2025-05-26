@@ -3,13 +3,25 @@ import axios from 'axios';
 export interface UserData {
   id: string;
   name: string;
+  nomeSocial?: string;
   email: string;
   role: string;
   profilePicture?: string; // URL da imagem do avatar (opcional)
   imageUrl?: string; // Mantido para compatibilidade
-  specialty?: string; // Para médicos
-  department?: string; // Para administradores
-  birthDate?: string; // Para pacientes
+  telefone?: string;
+  celular?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  naturalidade?: string;
+  nomeMae?: string;
+  nomePai?: string;
+  estadoCivil?: string;
+  escolaridade?: string;
+  tipoSanguineo?: string;
+  raca?: string;
+  cpf?: string;
+  insurance?: string;
+  specialty?: string;
 }
 
 export const TOKEN_KEY = '@TCE:token';

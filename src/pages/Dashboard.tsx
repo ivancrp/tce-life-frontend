@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import { toast } from 'react-toastify';
+import Breadcrumbs from '../components/Breadcrumbs';
 
 interface DashboardData {
   pacientes: {
@@ -138,11 +139,11 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Seção de Pacientes */}
         <div>
           <h2 className="text-lg font-medium text-gray-900 mb-4">Pacientes</h2>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-[1000px]">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <div className="bg-white overflow-hidden shadow rounded-lg">
               <div className="p-5">
                 <div className="flex items-center">
@@ -190,7 +191,7 @@ const Dashboard = () => {
         {/* Seção de Atendimentos */}
         <div>
           <h2 className="text-lg font-medium text-gray-900 mb-4">Atendimentos</h2>
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 max-w-[1000px]">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2 bg-white shadow rounded-lg p-6">
               <h3 className="text-base font-medium text-gray-900 mb-4">Por Especialidade</h3>
               <div className="space-y-4">
@@ -246,7 +247,7 @@ const Dashboard = () => {
         {/* Seção de Estoque */}
         <div>
           <h2 className="text-lg font-medium text-gray-900 mb-4">Estoque</h2>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-[1000px]">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <div className="bg-white overflow-hidden shadow rounded-lg">
               <div className="p-5">
                 <div className="flex items-center">

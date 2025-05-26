@@ -13,7 +13,8 @@ const routeLabels: { [key: string]: string } = {
   'inventory': 'Inventário',
   'atendimento': 'Atendimento',
   'portal-paciente': 'Portal do Paciente',
-  'medical-records': 'Prontuário'
+  'medical-records': 'Prontuário',
+  'profile': 'Perfil do Usuário'
 };
 
 const Breadcrumbs = () => {
@@ -27,7 +28,15 @@ const Breadcrumbs = () => {
 
   // Tratamento especial para a rota de prontuário médico
   const isMedicalRecord = pathnames[0] === 'medical-records' && pathnames.length > 1;
-  const processedPathnames = isMedicalRecord ? ['records', 'Prontuário'] : pathnames;
+  // Tratamento especial para a rota de atendimento
+  const isAttendance = pathnames[0] === 'atendimento' && pathnames.length > 1;
+
+  let processedPathnames = pathnames;
+  if (isMedicalRecord) {
+    processedPathnames = ['records', 'Prontuário'];
+  } else if (isAttendance) {
+    processedPathnames = ['schedule', 'Atendimento'];
+  }
 
   return (
     <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-4">
@@ -39,9 +48,9 @@ const Breadcrumbs = () => {
       </Link>
 
       {processedPathnames.map((value, index) => {
-        // Para prontuário médico, ajusta os links
-        const to = isMedicalRecord && index === 1 
-          ? location.pathname // Mantém o URL atual para o prontuário
+        // Para prontuário médico ou atendimento, ajusta os links
+        const to = (isMedicalRecord || isAttendance) && index === 1 
+          ? location.pathname // Mantém o URL atual para o prontuário/atendimento
           : `/${processedPathnames.slice(0, index + 1).join('/')}`;
         
         const isLast = index === processedPathnames.length - 1;

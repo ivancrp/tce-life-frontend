@@ -80,6 +80,7 @@ export interface Attendance {
     celular: string;
     gender: string;
     raca: string;
+    cpf?: string;
     allergies: string[];
     medications: Medication[];
     chronicDiseases: string[];

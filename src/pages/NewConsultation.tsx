@@ -8,13 +8,15 @@ import {
   Send
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import Breadcrumbs from '../components/Breadcrumbs';
 
 const NewConsultation = () => {
   const [activeTab, setActiveTab] = useState<'consultation' | 'prescription' | 'certificate'>('consultation');
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Breadcrumbs />
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
             <Link

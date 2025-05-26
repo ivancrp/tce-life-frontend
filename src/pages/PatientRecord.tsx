@@ -29,9 +29,11 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import type { MedicalRecord, User, VitalSigns, Medication, Exam } from '../types';
+import { User } from '../types';
+import { PatientUser, VitalSigns, Medication, Exam, MedicalRecord } from '../types/medical-record';
 import api from '../services/api';
 import ErrorNotification from '../components/ErrorNotification';
+import Breadcrumbs from '../components/Breadcrumbs';
 
 interface ErrorState {
   visible: boolean;
@@ -45,7 +47,7 @@ const PatientRecord = () => {
   const navigate = useNavigate();
   console.log('ID do paciente recebido:', id);
 
-  const [patient, setPatient] = useState<User | null>(null);
+  const [patient, setPatient] = useState<PatientUser | null>(null);
   const [vitalSigns, setVitalSigns] = useState<VitalSigns | null>(null);
   const [medications, setMedications] = useState<Medication[]>([]);
   const [consultations, setConsultations] = useState<MedicalRecord[]>([]);
@@ -128,16 +130,27 @@ const PatientRecord = () => {
         id: id || 'mock-123',
         name: "Maria Silva Santos",
         email: "maria.silva@email.com",
-        phone: "(11) 98765-4321",
-        birth_date: "1985-03-15",
-        gender: "female" as "female" | "male",
+        profilePicture: "https://i.pravatar.cc/300?img=47",
+        isActive: true,
+        role: {
+          id: "1",
+          name: "PACIENTE"
+        },
+        dateOfBirth: new Date("1985-03-15"),
+        gender: "female" as "female",
         cpf: "123.456.789-00",
-        rg: "12.345.678-9",
+        insurance: "Unimed",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        // Campos adicionais do PatientUser
         avatar_url: "https://i.pravatar.cc/300?img=47",
         age: 38,
         blood_type: "A+",
         allergies: ["Penicilina", "Dipirona", "Frutos do Mar"],
         health_insurance: "Unimed",
+        phone: "(11) 98765-4321",
+        rg: "12.345.678-9",
+        birth_date: "1985-03-15",
         address: {
           street: "Avenida Paulista",
           number: "1000",
@@ -151,7 +164,7 @@ const PatientRecord = () => {
           email: "maria.silva@email.com",
           emergency_contact: "(11) 99999-8888"
         }
-      };
+      } as PatientUser;
 
       const mockVitalSigns = {
         id: "vs-" + Date.now(),
@@ -604,6 +617,7 @@ const PatientRecord = () => {
   console.log('Renderizando prontuário completo');
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
+      <Breadcrumbs />
       {error.visible && (
         <ErrorNotification
           message={error.message}

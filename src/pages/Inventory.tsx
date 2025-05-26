@@ -3,6 +3,7 @@ import { Search, PlusCircle, Edit, Trash2, AlertCircle } from 'lucide-react';
 import { medicamentoService, Medicamento } from '../services/medicamento.service';
 import AddMedicationStepsModal from '../components/AddMedicationStepsModal';
 import EditMedicationModal from '../components/EditMedicationModal';
+import Breadcrumbs from '../components/Breadcrumbs';
 
 const Inventory = () => {
   const [medicamentos, setMedicamentos] = useState<Medicamento[]>([]);
@@ -93,107 +94,112 @@ const Inventory = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Estoque de Medicamentos</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <PlusCircle className="w-5 h-5 mr-2" />
-          Adicionar Medicamento
-        </button>
-      </div>
+    <div className="min-h-screen bg-gray-50 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Breadcrumbs />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">Estoque de Medicamentos</h1>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <PlusCircle className="w-5 h-5 mr-2" />
+              Adicionar Medicamento
+            </button>
+          </div>
 
-      <div className="mb-6">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Buscar medicamento..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <Search className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
+          <div className="mb-6">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar medicamento..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <Search className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
+            </div>
+          </div>
+
+          {error && (
+            <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+              <AlertCircle className="inline-block w-5 h-5 mr-2" />
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="text-center py-8">Carregando...</div>
+          ) : (
+            <div className="bg-white shadow overflow-hidden sm:rounded-md">
+              <ul className="divide-y divide-gray-200">
+                {filteredMedicamentos.map((medicamento) => (
+                  <li key={medicamento.id} className="px-6 py-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900">{medicamento.nomeComercial}</h3>
+                        <p className="text-sm text-gray-500">Nome Genérico: {medicamento.nomeGenerico}</p>
+                        <p className="text-sm text-gray-500">Fabricante: {medicamento.fabricante?.nome || 'Não especificado'}</p>
+                        <p className="text-sm text-gray-500">
+                          Lote: {medicamento.lote} | Validade: {formatDate(medicamento.dataValidade)}
+                          {isExpired(medicamento.dataValidade) && (
+                            <span className="ml-2 text-red-600">Vencido</span>
+                          )}
+                          {isAboutToExpire(medicamento.dataValidade) && (
+                            <span className="ml-2 text-yellow-600">Próximo ao vencimento</span>
+                          )}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Estoque: {medicamento.quantidadeEstoque} {medicamento.unidadeMedida}
+                          {medicamento.quantidadeEstoque <= medicamento.quantidadeMinima && (
+                            <span className="ml-2 text-red-600">Estoque baixo</span>
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <button
+                          onClick={() => {
+                            setSelectedMedication(medicamento);
+                            setIsEditModalOpen(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <Edit className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMedication(medicamento.id)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {isModalOpen && (
+            <AddMedicationStepsModal
+              onSubmit={handleAddMedication}
+              onClose={() => setIsModalOpen(false)}
+            />
+          )}
+
+          {isEditModalOpen && selectedMedication && (
+            <EditMedicationModal
+              medication={selectedMedication}
+              onSubmit={handleEditMedication}
+              onClose={() => {
+                setIsEditModalOpen(false);
+                setSelectedMedication(null);
+              }}
+            />
+          )}
         </div>
       </div>
-
-      {error && (
-        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-          <AlertCircle className="inline-block w-5 h-5 mr-2" />
-          {error}
-        </div>
-      )}
-
-      {loading ? (
-        <div className="text-center py-8">Carregando...</div>
-      ) : (
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-          <ul className="divide-y divide-gray-200">
-            {filteredMedicamentos.map((medicamento) => (
-              <li key={medicamento.id} className="px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">{medicamento.nomeComercial}</h3>
-                    <p className="text-sm text-gray-500">Nome Genérico: {medicamento.nomeGenerico}</p>
-                    <p className="text-sm text-gray-500">Fabricante: {medicamento.fabricante?.nome || 'Não especificado'}</p>
-                    <p className="text-sm text-gray-500">
-                      Lote: {medicamento.lote} | Validade: {formatDate(medicamento.dataValidade)}
-                      {isExpired(medicamento.dataValidade) && (
-                        <span className="ml-2 text-red-600">Vencido</span>
-                      )}
-                      {isAboutToExpire(medicamento.dataValidade) && (
-                        <span className="ml-2 text-yellow-600">Próximo ao vencimento</span>
-                      )}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Estoque: {medicamento.quantidadeEstoque} {medicamento.unidadeMedida}
-                      {medicamento.quantidadeEstoque <= medicamento.quantidadeMinima && (
-                        <span className="ml-2 text-red-600">Estoque baixo</span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <button
-                      onClick={() => {
-                        setSelectedMedication(medicamento);
-                        setIsEditModalOpen(true);
-                      }}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      <Edit className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteMedication(medicamento.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {isModalOpen && (
-        <AddMedicationStepsModal
-          onSubmit={handleAddMedication}
-          onClose={() => setIsModalOpen(false)}
-        />
-      )}
-
-      {isEditModalOpen && selectedMedication && (
-        <EditMedicationModal
-          medication={selectedMedication}
-          onSubmit={handleEditMedication}
-          onClose={() => {
-            setIsEditModalOpen(false);
-            setSelectedMedication(null);
-          }}
-        />
-      )}
     </div>
   );
 };

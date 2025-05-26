@@ -117,7 +117,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Main content */}
       <div className={`pt-[85px] transition-all duration-200 ${isSidebarOpen ? 'lg:pl-64' : ''}`}>
-        <div className="px-4">
+        <div className="px-4 pr-8 lg:pr-12">
           {children ? children : <Outlet />}
         </div>
       </div>

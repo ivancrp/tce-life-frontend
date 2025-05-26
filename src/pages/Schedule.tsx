@@ -20,6 +20,7 @@ import { scheduleService, Schedule as ScheduleType } from '../services/schedule.
 import { attendanceService } from '../services/attendance.service';
 import Button from '../components/Button';
 import { TOKEN_KEY } from '../utils/auth';
+import Breadcrumbs from '../components/Breadcrumbs';
 
 type ViewType = 'day' | 'week' | 'month';
 
@@ -204,285 +205,300 @@ export function SchedulePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-        <span className="ml-3 text-gray-600">Carregando agenda...</span>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            <span className="ml-3 text-gray-600">Carregando agenda...</span>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <div className="text-red-600 mb-4">{error}</div>
-        <Button onClick={() => { setError(null); loadSchedules(); }}>
-          Tentar novamente
-        </Button>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col items-center justify-center h-64">
+            <div className="text-red-600 mb-4">{error}</div>
+            <Button onClick={() => { setError(null); loadSchedules(); }}>
+              Tentar novamente
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">Agenda Médica</h1>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input
-                type="text"
-                placeholder="Buscar agendamentos..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-80 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <button className="p-2 hover:bg-gray-100 rounded-lg">
-              <Filter className="h-5 w-5 text-gray-600" />
-            </button>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700">
-              <span>Novo Agendamento</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <button
-              className="p-2 hover:bg-gray-100 rounded-full"
-              onClick={() => navigateDate('prev')}
-            >
-              <ChevronLeft className="h-5 w-5 text-gray-600" />
-            </button>
-            <span className="text-lg font-medium">
-              {format(currentDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-            </span>
-            <button
-              className="p-2 hover:bg-gray-100 rounded-full"
-              onClick={() => navigateDate('next')}
-            >
-              <ChevronRight className="h-5 w-5 text-gray-600" />
-            </button>
-          </div>
-          <div className="flex gap-2">
-            <button 
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                view === 'day' 
-                  ? 'text-white bg-blue-600 border-transparent' 
-                  : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
-              }`}
-              onClick={() => setView('day')}
-            >
-              Dia
-            </button>
-            <button 
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                view === 'week' 
-                  ? 'text-white bg-blue-600 border-transparent' 
-                  : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
-              }`}
-              onClick={() => setView('week')}
-            >
-              Semana
-            </button>
-            <button 
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                view === 'month' 
-                  ? 'text-white bg-blue-600 border-transparent' 
-                  : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
-              }`}
-              onClick={() => setView('month')}
-            >
-              Mês
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Calendar Grid */}
-      <div className="bg-white rounded-lg shadow">
-        {/* Days header */}
-        <div className="grid grid-cols-8 border-b">
-          <div className="p-4 text-sm font-medium text-gray-500 border-r"></div>
-          {getDaysToShow().map((day) => (
-            <div
-              key={day.toString()}
-              className="p-4 text-center border-r last:border-r-0"
-            >
-              <div className="text-sm font-medium text-gray-900 uppercase">
-                {format(day, 'EEE', { locale: ptBR })}
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Breadcrumbs />
+        
+        <div className="space-y-8">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-semibold text-gray-900">Agenda Médica</h1>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <input
+                  type="text"
+                  placeholder="Buscar agendamentos..."
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-80 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-              <div className="text-2xl font-semibold text-gray-600">
-                {format(day, 'd')}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Time slots */}
-        <div className="divide-y">
-          {timeSlots.map((time) => (
-            <div key={time} className="grid grid-cols-8">
-              <div className="p-4 text-sm text-gray-500 border-r">
-                {time}
-              </div>
-              {getDaysToShow().map((day) => {
-                const daySchedules = filteredSchedules.filter(
-                  schedule => 
-                    isSameDay(new Date(schedule.date), day) && 
-                    schedule.time === time
-                );
-                
-                return (
-                  <div
-                    key={day.toString()}
-                    className="p-2 border-r last:border-r-0 min-h-[80px] relative"
-                  >
-                    {daySchedules.map((schedule) => (
-                      <div
-                        key={schedule.id}
-                        onClick={() => handleScheduleClick(schedule)}
-                        className={`
-                          schedule-appointment
-                          ${schedule.status === 'confirmed' ? 'schedule-status-confirmed' :
-                            schedule.status === 'pending' ? 'schedule-status-pending' :
-                            schedule.status === 'cancelled' ? 'schedule-status-cancelled' :
-                            schedule.status === 'completed' ? 'schedule-status-completed' :
-                            schedule.status === 'in_progress' ? 'schedule-status-in-progress' :
-                            'bg-gray-50 border-l-4 border-gray-500'
-                          }
-                        `}
-                      >
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center justify-between">
-                            <span className="schedule-patient-name">
-                              {schedule.user?.name || schedule.patientName}
-                            </span>
-                            <span className="schedule-duration-badge">
-                              {schedule.duration || 30}min
-                            </span>
-                          </div>
-                          <div className="schedule-appointment-type">
-                            {schedule.type === 'primeira_consulta' ? 'Primeira Consulta' :
-                             schedule.type === 'retorno' ? 'Retorno' :
-                             schedule.type === 'consulta_regular' ? 'Consulta Regular' :
-                             schedule.type}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Modal de Detalhes do Agendamento */}
-      {showDetailsModal && selectedSchedule && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-xl font-medium">Detalhes do Agendamento</h3>
-              <button
-                onClick={() => setShowDetailsModal(false)}
-                className="text-gray-400 hover:text-gray-500"
-              >
-                <X className="h-5 w-5" />
+              <button className="p-2 hover:bg-gray-100 rounded-lg">
+                <Filter className="h-5 w-5 text-gray-600" />
+              </button>
+              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700">
+                <span>Novo Agendamento</span>
               </button>
             </div>
+          </div>
 
-            <div className="p-6 space-y-4">
-              <div className="flex items-center space-x-2">
-                <CalendarLucide className="h-5 w-5 text-gray-500" />
-                <span className="text-gray-900">
-                  {format(new Date(selectedSchedule.date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                </span>
-                <Clock className="h-5 w-5 text-gray-500 ml-4" />
-                <span className="text-gray-900">{selectedSchedule.time}</span>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <span className="font-medium">Paciente: </span>
-                  <span className="text-gray-900">{selectedSchedule.user?.name || selectedSchedule.patientName}</span>
-                </div>
-                
-                <div>
-                  <span className="font-medium">Médico: </span>
-                  <span className="text-gray-900">{selectedSchedule.doctor?.name || selectedSchedule.doctorName}</span>
-                </div>
-                
-                <div>
-                  <span className="font-medium">Tipo: </span>
-                  <span className="text-gray-900">{selectedSchedule.type}</span>
-                </div>
-                
-                <div>
-                  <span className="font-medium">Status: </span>
-                  <span className={`
-                    px-2 py-1 rounded-full text-sm
-                    ${selectedSchedule.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      selectedSchedule.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                      selectedSchedule.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                      selectedSchedule.status === 'in_progress' ? 'bg-purple-100 text-purple-800' :
-                      'bg-blue-100 text-blue-800'
-                    }`}
-                  >
-                    {selectedSchedule.status === 'pending' ? 'Pendente' :
-                     selectedSchedule.status === 'confirmed' ? 'Confirmado' :
-                     selectedSchedule.status === 'cancelled' ? 'Cancelado' :
-                     selectedSchedule.status === 'in_progress' ? 'Em Atendimento' :
-                     'Concluído'}
-                  </span>
-                </div>
-
-                {selectedSchedule.notes && (
-                  <div>
-                    <span className="font-medium">Observações: </span>
-                    <span className="text-gray-900">{selectedSchedule.notes}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center space-x-3 pt-4">
-                {selectedSchedule.status !== 'completed' && 
-                 selectedSchedule.status !== 'cancelled' && 
-                 selectedSchedule.status !== 'in_progress' && (
-                  <button
-                    onClick={() => handleStartAttendance(selectedSchedule.id)}
-                    className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    <Stethoscope className="h-5 w-5 mr-2" />
-                    Realizar Atendimento
-                  </button>
-                )}
-                
-                {selectedSchedule.status === 'in_progress' && (
-                  <button
-                    onClick={() => navigate(`/atendimento/${selectedSchedule.id}`)}
-                    className="flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
-                  >
-                    <Stethoscope className="h-5 w-5 mr-2" />
-                    Continuar Atendimento
-                  </button>
-                )}
-                
+          {/* Calendar Controls */}
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
                 <button
-                  onClick={() => navigate(`/medical-records/${selectedSchedule.userId}`)}
-                  className="flex items-center justify-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                  onClick={() => navigateDate('prev')}
                 >
-                  <FileText className="h-5 w-5 mr-2" />
-                  Ver Prontuário
+                  <ChevronLeft className="h-5 w-5 text-gray-600" />
+                </button>
+                <span className="text-lg font-medium">
+                  {format(currentDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                </span>
+                <button
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                  onClick={() => navigateDate('next')}
+                >
+                  <ChevronRight className="h-5 w-5 text-gray-600" />
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    view === 'day' 
+                      ? 'text-white bg-blue-600 border-transparent' 
+                      : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                  }`}
+                  onClick={() => setView('day')}
+                >
+                  Dia
+                </button>
+                <button 
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    view === 'week' 
+                      ? 'text-white bg-blue-600 border-transparent' 
+                      : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                  }`}
+                  onClick={() => setView('week')}
+                >
+                  Semana
+                </button>
+                <button 
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    view === 'month' 
+                      ? 'text-white bg-blue-600 border-transparent' 
+                      : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                  }`}
+                  onClick={() => setView('month')}
+                >
+                  Mês
                 </button>
               </div>
             </div>
+
+            {/* Calendar Grid */}
+            <div className="bg-white rounded-lg">
+              {/* Days header */}
+              <div className="grid grid-cols-8 border-b">
+                <div className="p-4 text-sm font-medium text-gray-500 border-r"></div>
+                {getDaysToShow().map((day) => (
+                  <div
+                    key={day.toString()}
+                    className="p-4 text-center border-r last:border-r-0"
+                  >
+                    <div className="text-sm font-medium text-gray-900 uppercase">
+                      {format(day, 'EEE', { locale: ptBR })}
+                    </div>
+                    <div className="text-2xl font-semibold text-gray-600">
+                      {format(day, 'd')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Time slots */}
+              <div className="divide-y">
+                {timeSlots.map((time) => (
+                  <div key={time} className="grid grid-cols-8">
+                    <div className="p-4 text-sm text-gray-500 border-r">
+                      {time}
+                    </div>
+                    {getDaysToShow().map((day) => {
+                      const daySchedules = filteredSchedules.filter(
+                        schedule => 
+                          isSameDay(new Date(schedule.date), day) && 
+                          schedule.time === time
+                      );
+                      
+                      return (
+                        <div
+                          key={day.toString()}
+                          className="p-2 border-r last:border-r-0 min-h-[80px] relative"
+                        >
+                          {daySchedules.map((schedule) => (
+                            <div
+                              key={schedule.id}
+                              onClick={() => handleScheduleClick(schedule)}
+                              className={`
+                                cursor-pointer
+                                p-2 rounded-lg mb-2
+                                ${getScheduleColor(schedule.status)}
+                              `}
+                            >
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium truncate">
+                                    {schedule.user?.name || schedule.patientName}
+                                  </span>
+                                  <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                                    {schedule.duration || 30}min
+                                  </span>
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {schedule.type === 'primeira_consulta' ? 'Primeira Consulta' :
+                                   schedule.type === 'retorno' ? 'Retorno' :
+                                   schedule.type === 'consulta_regular' ? 'Consulta Regular' :
+                                   schedule.type}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-      )}
+
+        {/* Modal de Detalhes do Agendamento */}
+        {showDetailsModal && selectedSchedule && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
+              <div className="flex items-center justify-between p-4 border-b">
+                <h3 className="text-xl font-medium">Detalhes do Agendamento</h3>
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="flex items-center space-x-2">
+                  <CalendarLucide className="h-5 w-5 text-gray-500" />
+                  <span className="text-gray-900">
+                    {format(new Date(selectedSchedule.date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  </span>
+                  <Clock className="h-5 w-5 text-gray-500 ml-4" />
+                  <span className="text-gray-900">{selectedSchedule.time}</span>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <span className="font-medium">Paciente: </span>
+                    <span className="text-gray-900">{selectedSchedule.user?.name || selectedSchedule.patientName}</span>
+                  </div>
+                  
+                  <div>
+                    <span className="font-medium">Médico: </span>
+                    <span className="text-gray-900">{selectedSchedule.doctor?.name || selectedSchedule.doctorName}</span>
+                  </div>
+                  
+                  <div>
+                    <span className="font-medium">Tipo: </span>
+                    <span className="text-gray-900">
+                      {selectedSchedule.type === 'primeira_consulta' ? 'Primeira Consulta' :
+                       selectedSchedule.type === 'retorno' ? 'Retorno' :
+                       selectedSchedule.type === 'consulta_regular' ? 'Consulta Regular' :
+                       selectedSchedule.type}
+                    </span>
+                  </div>
+                  
+                  <div>
+                    <span className="font-medium">Status: </span>
+                    <span className={`
+                      px-2 py-1 rounded-full text-sm
+                      ${selectedSchedule.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        selectedSchedule.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                        selectedSchedule.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                        selectedSchedule.status === 'in_progress' ? 'bg-purple-100 text-purple-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}
+                    >
+                      {selectedSchedule.status === 'pending' ? 'Pendente' :
+                       selectedSchedule.status === 'confirmed' ? 'Confirmado' :
+                       selectedSchedule.status === 'cancelled' ? 'Cancelado' :
+                       selectedSchedule.status === 'in_progress' ? 'Em Atendimento' :
+                       'Concluído'}
+                    </span>
+                  </div>
+
+                  {selectedSchedule.notes && (
+                    <div>
+                      <span className="font-medium">Observações: </span>
+                      <span className="text-gray-900">{selectedSchedule.notes}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center space-x-3 pt-4">
+                  {selectedSchedule.status !== 'completed' && 
+                   selectedSchedule.status !== 'cancelled' && 
+                   selectedSchedule.status !== 'in_progress' && (
+                    <button
+                      onClick={() => handleStartAttendance(selectedSchedule.id)}
+                      className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      <Stethoscope className="h-5 w-5 mr-2" />
+                      Realizar Atendimento
+                    </button>
+                  )}
+                  
+                  {selectedSchedule.status === 'in_progress' && (
+                    <button
+                      onClick={() => navigate(`/atendimento/${selectedSchedule.id}`)}
+                      className="flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+                    >
+                      <Stethoscope className="h-5 w-5 mr-2" />
+                      Continuar Atendimento
+                    </button>
+                  )}
+                  
+                  <button
+                    onClick={() => navigate(`/medical-records/${selectedSchedule.userId}`)}
+                    className="flex items-center justify-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                  >
+                    <FileText className="h-5 w-5 mr-2" />
+                    Ver Prontuário
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { UserCircle, LogOut, ChevronDown } from 'lucide-react';
+import { UserCircle, LogOut, ChevronDown, Settings } from 'lucide-react';
 import { getCurrentUser, logout } from '../utils/auth';
 import Modal from './Modal';
 
@@ -99,10 +99,19 @@ const UserMenu = () => {
             <p className="text-xs text-gray-500">{userData?.role}</p>
           </div>
           <div className="border-t border-gray-100">
+            <Link
+              to="/settings/profile"
+              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              onClick={() => setIsOpen(false)}
+            >
+              <Settings className="h-4 w-4 inline mr-2" />
+              Configurações
+            </Link>
             <button
               onClick={handleLogoutClick}
               className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
+              <LogOut className="h-4 w-4 inline mr-2" />
               Sair
             </button>
           </div>

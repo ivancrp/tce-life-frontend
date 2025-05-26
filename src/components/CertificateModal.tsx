@@ -9,6 +9,7 @@ interface CertificateModalProps {
   isOpen: boolean;
   onClose: () => void;
   patientName: string;
+  patientCpf: string;
   doctorName: string;
   attendanceDate: Date;
   attendanceTime: string;
@@ -20,6 +21,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
   isOpen,
   onClose,
   patientName,
+  patientCpf,
   doctorName,
   attendanceDate,
   attendanceTime,
@@ -136,9 +138,16 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
           <h2>ATESTADO MÉDICO</h2>
 
           <div class="content">
-            <p>Atesto que atendi nesta data o(a) Sr(a) ${patientName} às ${attendanceTime}, sendo necessário seu afastamento do local de trabalho ou escola por ${certificateData.daysOff} dia(s), a partir de ${format(new Date(certificateData.startDate), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}, tendo como causa do atendimento o código abaixo:</p>
+            <p>Atesto, para os devidos fins, que o(a) Sr(a) ${patientName}${patientCpf ? `, portador(a) do CPF ${patientCpf}` : ''}, 
+            foi submedito a uma consulta médica, na data de hoje, ${attendanceTime} hrs, ${format(new Date(certificateData.startDate),
+               "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}, em decorrência, deverá permanecer afastado de suas atividades laborais ou de estudos,
+                por um período de ${certificateData.daysOff} dia(s), a partir desta data. ${format(new Date(certificateData.startDate),
+                  "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}, tendo como causa do atendimento o código abaixo:
+                <br>
+                <br>
+               </p>
 
-            <p><strong>${certificateData.cid || '...........................'}</strong><br>
+            <p><strong>CID - ${certificateData.cid || '...........................'}</strong><br>
             ............................<br>
             Código da Doença</p>
           </div>
